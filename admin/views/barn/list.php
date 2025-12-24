@@ -1,0 +1,1 @@
+<!-- Views for Barn Management (Views riêng cho module Chuồng) -->

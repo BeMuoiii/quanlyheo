@@ -1,0 +1,9 @@
+# public/.htaccess
+RewriteEngine On
+
+# Cho phép truy cập file tĩnh (css, js, img...)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Đẩy toàn bộ request về public/index.php để router xử lý
+RewriteRule ^ public/index.php [QSA,L]
