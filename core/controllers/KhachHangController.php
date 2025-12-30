@@ -230,4 +230,42 @@ class KhachHangController
 
         $this->view('delete', compact('kh'));
     }
+
+
+    // ==================== XEM CHI TIẾT KHÁCH HÀNG ====================
+    public function xemchitiet($id = null)
+    {
+        // Hỗ trợ cả ?id=123 và /xemchitiet/123 hoặc ?action=xemchitiet&id=123
+        $id = (int)($id ?? $_GET['id'] ?? 0);
+
+        if ($id <= 0) {
+            $_SESSION['error'] = 'Mã khách hàng không hợp lệ!';
+            header('Location: index.php?url=khachhang');
+            exit;
+        }
+
+        // Lấy thông tin chi tiết từ Model
+        $khachhang = $this->model->getXemChiTietById($id);
+
+        if (!$khachhang) {
+            $_SESSION['error'] = 'Không tìm thấy khách hàng này!';
+            header('Location: index.php?url=khachhang');
+            exit;
+        }
+
+        // Lấy danh sách nhân viên (nếu cần hiển thị tên phụ trách)
+        $danhSachNhanVien = $this->pdo->query("
+            SELECT MaNV, HoTen 
+            FROM nhanvien 
+            WHERE TrangThai IN ('Chính thức','Thử việc')
+            ORDER BY HoTen
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Render view chi tiết
+        $this->view('xemchitiet', [
+            'khachhang'        => $khachhang,
+            'danhSachNhanVien' => $danhSachNhanVien,
+            'thong_ke'         => $khachhang['thong_ke'] ?? []
+        ]);
+    }
 }

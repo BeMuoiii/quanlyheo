@@ -15,7 +15,7 @@ class AuthController
     // DÒNG DUY NHẤT CẦN SỬA – CHẠY 100% LUÔN!
     public function showLogin()
     {
-        require_once $_SERVER['DOCUMENT_ROOT'] . '/heorunglaitext3/admin/views/auth/login.php';
+       require_once dirname(__DIR__, 2) . '/admin/views/auth/login.php';
     }
 
     public function processLogin()

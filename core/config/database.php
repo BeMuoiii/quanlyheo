@@ -14,10 +14,10 @@ if (!function_exists('base_url')) {
 // core/config/Database.php
 class Database
 {
-    private $host = '127.0.0.1';       // ĐỔI DÒNG NÀY TỪ 'localhost' THÀNH '127.0.0.1'
-    private $db_name = 'heorunglai1';   // tên DB của bạn
-    private $username = 'root';
-    private $password = '';
+    private $host = 'sql302.infinityfree.com';
+    private $db_name = 'if0_40752166_heorunglai1';
+    private $username = 'if0_40752166';
+    private $password = '5NOR0wgsDH';
     public $conn;
 
     public function getConnection()

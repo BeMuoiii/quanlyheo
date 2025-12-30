@@ -155,4 +155,61 @@ class KhachHangModel
             return "Lỗi hệ thống khi xóa heo: " . $e->getMessage();
         }
     }
+
+
+    // === XEM CHI TIẾT KHÁCH HÀNG - HÀM NÀY KHỚP VỚI CONTROLLER XEMCHITIET ===
+    public function getXemChiTietById($id)
+    {
+        // Lấy thông tin cơ bản + tên nhân viên phụ trách
+        $sql = "
+            SELECT 
+                kh.*, 
+                nv.HoTen AS TenNhanVienPhuTrach
+            FROM khachhang kh
+            LEFT JOIN nhanvien nv ON kh.MaNVPhuTrach = nv.MaNV
+            WHERE kh.MaKH = ?
+        ";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$id]);
+        $khachhang = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$khachhang) {
+            return false;
+        }
+
+        // Khởi tạo thống kê mặc định
+        $khachhang['thong_ke'] = [
+            'tong_giao_dich' => 0,
+            'tong_tien'      => 0,
+            'lan_cuoi_mua'   => null
+        ];
+
+        // Thống kê giao dịch từ bảng hoadon (nếu tồn tại)
+        try {
+            $statSql = "
+                SELECT 
+                    COUNT(*) AS so_lan,
+                    COALESCE(SUM(TongTien), 0) AS tong_tien,
+                    MAX(NgayLap) AS lan_cuoi
+                FROM hoadon 
+                WHERE MaKH = ?
+            ";
+            $statStmt = $this->pdo->prepare($statSql);
+            $statStmt->execute([$id]);
+            $stats = $statStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($stats) {
+                $khachhang['thong_ke'] = [
+                    'tong_giao_dich' => (int)$stats['so_lan'],
+                    'tong_tien'      => (float)$stats['tong_tien'],
+                    'lan_cuoi_mua'   => $stats['lan_cuoi']
+                ];
+            }
+        } catch (PDOException $e) {
+            // Nếu chưa có bảng hoadon → bỏ qua, không lỗi
+            error_log("Lỗi lấy thống kê khách hàng ID $id: " . $e->getMessage());
+        }
+
+        return $khachhang;
+    }
 }

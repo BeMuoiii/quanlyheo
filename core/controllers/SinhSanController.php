@@ -307,6 +307,60 @@ class SinhSanController
     }
 
 
+    // === XÓA PHIẾU SINH SẢN ===
+    public function delete($id = null)
+    {
+        // Lấy ID từ parameter hoặc GET (hỗ trợ cả ?url=sinhsan/delete&id=5 và /delete/5)
+        $id = (int)($id ?? $_GET['id'] ?? 0);
+
+        if ($id <= 0) {
+            $_SESSION['error'] = "Mã phiếu sinh sản không hợp lệ!";
+            header('Location: index.php?url=sinhsan');
+            exit;
+        }
+
+        // === KIỂM TRA QUYỀN (CHỈ ADMIN ĐƯỢC XÓA) ===
+        // Nếu bạn có session role, ví dụ: $_SESSION['user']['role'] === 'admin'
+        // Nếu chưa có hệ thống phân quyền thì comment phần này tạm
+        if (!isset($_SESSION['user']) || $_SESSION['user']['role'] ?? '' !== 'admin') {
+            $_SESSION['error'] = "Bạn không có quyền xóa phiếu sinh sản!";
+            header('Location: index.php?url=sinhsan');
+            exit;
+        }
+
+        // === KIỂM TRA PHIẾU CÓ TỒN TẠI KHÔNG ===
+        $stmt = $this->pdo->prepare("SELECT SinhSan, MaHeoNai FROM sinhsan WHERE SinhSan = ?");
+        $stmt->execute([$id]);
+        $phieu = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$phieu) {
+            $_SESSION['error'] = "Phiếu sinh sản không tồn tại!";
+            header('Location: index.php?url=sinhsan');
+            exit;
+        }
+
+        // === THỰC HIỆN XÓA ===
+        try {
+            $stmtDelete = $this->pdo->prepare("DELETE FROM sinhsan WHERE SinhSan = ?");
+            $stmtDelete->execute([$id]);
+
+            // Kiểm tra có xóa thành công không (rowCount > 0)
+            if ($stmtDelete->rowCount() > 0) {
+                $_SESSION['success'] = "Xóa phiếu sinh sản #{$id} (Heo nái: {$phieu['MaHeoNai']}) thành công!";
+            } else {
+                $_SESSION['error'] = "Không thể xóa phiếu này (có thể đã bị xóa trước đó)!";
+            }
+        } catch (PDOException $e) {
+            // Log lỗi nếu cần (không hiển thị cho user)
+            error_log("Lỗi xóa phiếu sinh sản ID $id: " . $e->getMessage());
+            $_SESSION['error'] = "Lỗi hệ thống khi xóa phiếu. Vui lòng thử lại!";
+        }
+
+        // === CHUYỂN HƯỚNG VỀ TRANG CHÍNH ===
+        header('Location: index.php?url=sinhsan');
+        exit;
+    }
+
     // === GHI NHẬN ĐẺ ===
     public function ghiNhanDe($id = null)
     {
