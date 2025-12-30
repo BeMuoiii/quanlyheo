@@ -1,9 +1,12 @@
-# public/.htaccess
 RewriteEngine On
 
-# Cho phép truy cập file tĩnh (css, js, img...)
+# 1. Tự động chuyển từ http sang https để hiện ổ khóa an toàn
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 2. Cho phép truy cập file tĩnh (css, js, img...)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Đẩy toàn bộ request về public/index.php để router xử lý
-RewriteRule ^ public/index.php [QSA,L]
+# 3. Đẩy toàn bộ request về public/index.php để router xử lý
+RewriteRule ^ index.php [QSA,L]
