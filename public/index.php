@@ -161,7 +161,7 @@ switch ($url) {
     case 'sinh-san/delete': // <<< THÊM CASE NÀY VÀO
     case 'sinhsan/ghiNhanDe':
     case 'sinh-san/ghiNhanDe': // <<< THÊM CASE NÀY VÀO
-     // <<< THÊM CASE NÀY VÀO
+        // <<< THÊM CASE NÀY VÀO
         // ... (Code khởi tạo Controller và logic điều hướng bên dưới giữ nguyên)
 
         // ... // <-- Đã thêm case xử lý POST
@@ -210,29 +210,28 @@ switch ($url) {
     case 'khachhang/delete':
     case 'khachhang/xemchitiet':
     case 'khachhang/view':
+    case 'khachhang/phahe':
         require_once __DIR__ . '/../core/controllers/KhachHangController.php';
 
-        // TÊN CLASS PHẢI ĐÚNG 100%: KhachHangController (chữ H hoa)
         $khachHangController = new KhachHangController($pdo);
 
-        // Lấy action từ URL: khachhang/add → $action = add
-        $url_clean = explode('&', $url)[0];                    // bỏ phần sau dấu &
-        $parts     = explode('/', rtrim($url_clean, '/'));     // chia theo dấu /
-        $action    = $parts[1] ?? 'index';                     // mặc định là index
+        $url_clean = explode('&', $url)[0];
+        $parts     = explode('/', rtrim($url_clean, '/'));
+        $action    = $parts[1] ?? 'index';
 
         if ($action === 'index' || empty($parts[1])) {
             $khachHangController->index();
         } elseif ($action === 'add') {
             $khachHangController->add();
-        } elseif ($action === 'edit' && isset($_GET['id'])) {
-            $khachHangController->edit((int)$_GET['id']);
-        } elseif ($action === 'delete' && isset($_GET['id'])) {
-            $khachHangController->delete((int)$_GET['id']);
-        } elseif (in_array($action, ['xemchitiet', 'view']) && (isset($_GET['id']) || isset($_GET['makh']))) {
-            $id = $_GET['id'] ?? $_GET['makh'];
-            $khachHangController->xemchitiet((int)$id);
+        } elseif ($action === 'edit' && isset($_GET['maKH'])) {
+            $khachHangController->edit($_GET['maKH']); // string
+        } elseif ($action === 'delete' && isset($_GET['maKH'])) {
+            $khachHangController->delete($_GET['maKH']); // string
+        } elseif (in_array($action, ['xemchitiet', 'view']) && isset($_GET['maKH'])) {
+            $khachHangController->xemchitiet($_GET['maKH']);
+        } elseif ($action === 'phahe' && isset($_GET['maKH'])) {
+            $khachHangController->phahe($_GET['maKH']);
         } else {
-            // Nếu gõ linh tinh → quay về danh sách
             $khachHangController->index();
         }
         break;

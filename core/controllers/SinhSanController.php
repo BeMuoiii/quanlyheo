@@ -118,25 +118,27 @@ class SinhSanController
         // ================== DANH SÁCH SINH SẢN CÓ PHÂN TRANG ==================
         // ================== DANH SÁCH CHÍNH CÓ PHÂN TRANG (SỬA LẠI ĐÚNG CÁCH) ==================
         // ================== DANH SÁCH CHÍNH CÓ PHÂN TRANG ==================
+        // Trong method index(), phần query danh sách chính
         $sqlList = "
-            SELECT 
-                ss.*,
-                ss.NgayDe, -- Đảm bảo lấy cột này ra
-                DATE_ADD(ss.NgayPhoi, INTERVAL 114 DAY) AS NgayDuSinh,
-                hn.MaHeo AS MaHeoNai,
-                COALESCE(hn.GiongHeo, 'Không rõ') AS GiongNai,
-                hd.MaHeo AS MaHeoDuc,
-                COALESCE(hd.GiongHeo, 'Không rõ') AS GiongDuc,
-                COALESCE(nv.HoTen, 'Chưa ghi nhận') AS HoTen,
-                h_nai.ViTriChuong AS ChuongNai
-            FROM sinhsan ss
-            LEFT JOIN heo hn ON ss.MaHeoNai = hn.MaHeo
-            LEFT JOIN heo hd ON ss.MaHeoDuc = hd.MaHeo
-            LEFT JOIN nhanvien nv ON ss.MaNVThucHien = nv.MaNV
-            LEFT JOIN heo h_nai ON ss.MaHeoNai = h_nai.MaHeo
-            ORDER BY ss.NgayPhoi DESC, ss.SinhSan DESC
-            LIMIT ? OFFSET ?
-        ";
+    SELECT 
+        ss.*,
+        ss.NgayDe, 
+        DATE_ADD(ss.NgayPhoi, INTERVAL 114 DAY) AS NgayDuSinh,
+        hn.MaHeo AS MaHeoNai,
+        COALESCE(hn.GiongHeo, 'Không rõ') AS GiongNai,
+        hd.MaHeo AS MaHeoDuc,
+        COALESCE(hd.GiongHeo, 'Không rõ') AS GiongDuc,
+        COALESCE(nv.HoTen, 'Chưa ghi nhận') AS HoTen,
+        h_nai.ViTriChuong AS ChuongNai
+    FROM sinhsan ss
+    LEFT JOIN heo hn ON ss.MaHeoNai = hn.MaHeo
+    LEFT JOIN heo hd ON ss.MaHeoDuc = hd.MaHeo
+    LEFT JOIN nhanvien nv ON ss.MaNVThucHien = nv.MaNV
+    LEFT JOIN heo h_nai ON ss.MaHeoNai = h_nai.MaHeo
+    WHERE ss.MaKH IS NULL  -- CHỈ HIỆN PHIẾU PHỐI TRONG TRẠI, LOẠI BỎ CỦA KHÁCH
+    ORDER BY ss.NgayPhoi DESC, ss.SinhSan DESC
+    LIMIT ? OFFSET ?
+";
         $stmtList = $this->pdo->prepare($sqlList);
         $stmtList->bindValue(1, $limit, PDO::PARAM_INT);
         $stmtList->bindValue(2, $offset, PDO::PARAM_INT);
@@ -160,135 +162,114 @@ class SinhSanController
         ]);
     }
 
-    // === THÊM MỚI ===
+    // === THÊM MỚI ==
+
     public function add()
     {
+        $kh_id = (int)($_GET['kh_id'] ?? 0);
         $errors = [];
 
-        $dsHeoDuc = $this->pdo->query("SELECT MaHeo, CanNangHienTai, ViTriChuong FROM heo WHERE GioiTinh = 'D' AND TrangThaiHeo = 'Bình thường' ORDER BY MaHeo DESC")->fetchAll(PDO::FETCH_ASSOC);
+        // --- 1. TẠO MÃ PHIẾU TỰ ĐỘNG (Dùng để hiển thị và lưu) ---
+        // Giả sử tên cột trong bảng là MaSinhSan
+        try {
+            // Đổi MaSinhSan thành SinhSan trong câu lệnh SELECT
+            $stmtMax = $this->pdo->query("SELECT SinhSan FROM sinhsan ORDER BY CAST(SinhSan AS UNSIGNED) DESC LIMIT 1");
+            $lastRecord = $stmtMax->fetch(PDO::FETCH_ASSOC);
 
-        $dsHeoNai = $this->pdo->query("
+            if ($lastRecord && is_numeric($lastRecord['SinhSan'])) {
+                $autoSinhSan = (int)$lastRecord['SinhSan'] + 1;
+            } else {
+                $autoSinhSan = 1;
+            }
+        } catch (PDOException $e) {
+            $autoSinhSan = 1;
+        }
+
+        // --- 2. LẤY DANH SÁCH HEO ĐỰC & HEO CÁI (Giữ nguyên logic của bạn) ---
+        if ($kh_id > 0) {
+            $dsHeoDucStmt = $this->pdo->prepare("
+            SELECT DISTINCT h.MaHeo, h.CanNangHienTai, h.ViTriChuong
+            FROM heo h
+            INNER JOIN xuatchuong xc ON h.MaHeo = xc.MaHeo
+            WHERE xc.MaKH = ? AND h.GioiTinh = 'D'
+            ORDER BY h.MaHeo DESC
+        ");
+            $dsHeoDucStmt->execute([$kh_id]);
+            $dsHeoDuc = $dsHeoDucStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $dsHeoNaiStmt = $this->pdo->prepare("
+            SELECT DISTINCT h.MaHeo, h.CanNangHienTai, h.ViTriChuong
+            FROM heo h
+            INNER JOIN xuatchuong xc ON h.MaHeo = xc.MaHeo
+            WHERE xc.MaKH = ? AND h.GioiTinh = 'C'
+            ORDER BY h.MaHeo DESC
+        ");
+            $dsHeoNaiStmt->execute([$kh_id]);
+            $dsHeoNai = $dsHeoNaiStmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $dsHeoDuc = $this->pdo->query("
+            SELECT MaHeo, CanNangHienTai, ViTriChuong 
+            FROM heo 
+            WHERE GioiTinh = 'D' AND TrangThaiHeo = 'Bình thường' 
+            ORDER BY MaHeo DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+            $dsHeoNai = $this->pdo->query("
             SELECT h.MaHeo, h.CanNangHienTai, h.ViTriChuong
             FROM heo h
             LEFT JOIN sinhsan ss ON h.MaHeo = ss.MaHeoNai AND ss.TrangThai = 'DangTheoDoi'
             WHERE h.GioiTinh = 'C' AND h.TrangThaiHeo = 'Bình thường' AND ss.MaHeoNai IS NULL
             ORDER BY h.MaHeo DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $dsNhanVien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien ORDER BY HoTen ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $maNai    = trim($_POST['MaHeoNai'] ?? '');
-            $maDuc    = trim($_POST['MaHeoDuc'] ?? '');
-            $ngayPhoi = $_POST['NgayPhoi'] ?? '';
-
-            $ghiChu   = trim($_POST['GhiChu'] ?? '');
-            $maNV     = $_POST['MaNVThucHien'] ?? null;
-
-            if (empty($maNai)) $errors[] = "Chọn heo nái!";
-            if (empty($maDuc)) $errors[] = "Chọn heo đực!";
-            if (empty($ngayPhoi)) $errors[] = "Chọn ngày phối!";
-            if ($maNai === $maDuc) $errors[] = "Nái và đực không được trùng!";
-            if (strtotime($ngayPhoi) > time()) $errors[] = "Ngày phối không được lớn hơn hôm nay!";
-
-            if (empty($errors)) {
-                $check = $this->pdo->prepare("SELECT 1 FROM sinhsan WHERE MaHeoNai = ? AND TrangThai = 'DangTheoDoi'");
-                $check->execute([$maNai]);
-                if ($check->rowCount() > 0) $errors[] = "Heo nái <strong>$maNai</strong> đang mang thai!";
-            }
-
-            if (empty($errors)) {
-                try {
-                    $stmt = $this->pdo->prepare("INSERT INTO sinhsan (MaHeoNai, MaHeoDuc, NgayPhoi, MaNVThucHien, GhiChu, TrangThai) VALUES (?, ?, ?, ?, ?, 'DangTheoDoi')");
-                    $stmt->execute([$maNai, $maDuc, $ngayPhoi, $maNV, $ghiChu]);
-
-                    $ngayDuSinh = date('d/m/Y', strtotime($ngayPhoi . ' +114 days'));
-                    $_SESSION['success'] = "Ghi nhận phối giống thành công! Nái <strong>#$maNai</strong> dự sinh: <strong>$ngayDuSinh</strong>";
-
-                    header('Location: index.php?url=sinhsan/index');
-                    exit;
-                } catch (PDOException $e) {
-                    $errors[] = "Lỗi: " . $e->getMessage();
-                }
-            }
-            if (!empty($ngayPhoi)) {
-                // Chuyển đổi dd-mm-yyyy hoặc dd/mm/yyyy → yyyy-mm-dd
-                $ngayPhoi = str_replace('/', '-', $ngayPhoi);
-                $ngayPhoi = date('Y-m-d', strtotime($ngayPhoi));
-            }
-        }
-
-        $this->view('add', compact('errors', 'dsHeoNai', 'dsHeoDuc', 'dsNhanVien'));
-    }
-
-    // === SỬA – ĐÃ FIX 404 HOÀN TOÀN (hỗ trợ cả &id= và /id) ===
-    public function edit($id = null)
-    {
-        if ($id === null) $id = $_GET['id'] ?? null;
-
-        if (!$id) {
-            $_SESSION['error'] = "Không tìm thấy mã phiếu!";
-            header('Location: index.php?url=sinhsan/index');
-            exit;
-        }
-
-        // Lấy dữ liệu cũ
-        $stmt = $this->pdo->prepare("SELECT * FROM sinhsan WHERE SinhSan = ?");
-        $stmt->execute([$id]);
-        $sinhSan = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$sinhSan) {
-            $_SESSION['error'] = "Phiếu sinh sản không tồn tại!";
-            header('Location: index.php?url=sinhsan/index');
-            exit;
-        }
-
-        // Lấy danh sách Dropdown (Giữ nguyên logic lọc đực/nái bình thường)
-        $dsHeoDuc = $this->pdo->query("SELECT MaHeo, CanNangHienTai, ViTriChuong FROM heo WHERE GioiTinh = 'D' AND TrangThaiHeo = 'Bình thường' ORDER BY MaHeo DESC")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Nái ở trang EDIT cần hiện cả con nái hiện tại của phiếu đó + các con nái đang rảnh
-        $dsHeoNai = $this->pdo->query("
-        SELECT h.MaHeo, h.CanNangHienTai, h.ViTriChuong
-        FROM heo h
-        LEFT JOIN sinhsan ss ON h.MaHeo = ss.MaHeoNai AND ss.TrangThai = 'DangTheoDoi'
-        WHERE h.GioiTinh = 'C' AND h.TrangThaiHeo = 'Bình thường' 
-        AND (ss.MaHeoNai IS NULL OR h.MaHeo = '{$sinhSan['MaHeoNai']}')
-        ORDER BY h.MaHeo DESC
-    ")->fetchAll(PDO::FETCH_ASSOC);
-
-        $dsNhanVien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien ORDER BY HoTen ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $errors = [];
-
-        // Xử lý POST khi bấm lưu
+        // --- 3. XỬ LÝ KHI NGƯỜI DÙNG NHẤN LƯU (POST) ---
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $maNai       = trim($_POST['MaHeoNai'] ?? '');
             $maDuc       = trim($_POST['MaHeoDuc'] ?? '');
             $rawNgayPhoi = trim($_POST['NgayPhoi'] ?? '');
             $ghiChu      = trim($_POST['GhiChu'] ?? '');
             $maNV        = $_POST['MaNVThucHien'] ?? null;
-            $trangThai   = $_POST['TrangThai'] ?? 'DangTheoDoi';
+            // Lấy lại mã auto từ lúc load trang hoặc tạo mới để đảm bảo tính duy nhất
+            $finalMaSS = $autoSinhSan;
 
-            // Validate ngày phối
             $NgayPhoi = null;
             if ($rawNgayPhoi !== '') {
                 $NgayPhoi = date('Y-m-d', strtotime(str_replace('/', '-', $rawNgayPhoi)));
             }
 
-            if (empty($maNai)) $errors[] = "Chọn heo nái!";
-            if (empty($maDuc)) $errors[] = "Chọn heo đực!";
+            if (empty($maNai)) $errors[] = "Chọn mã heo cái!";
+            if (empty($maDuc)) $errors[] = "Chọn mã heo đực!";
             if (!$NgayPhoi) $errors[] = "Ngày phối không hợp lệ!";
+            if ($maNai === $maDuc) $errors[] = "Heo cái và đực không được cùng một con!";
+            if (strtotime($NgayPhoi) > time()) $errors[] = "Ngày phối không được ở tương lai!";
 
             if (empty($errors)) {
                 try {
-                    $sql = "UPDATE sinhsan SET 
-                        MaHeoNai = ?, MaHeoDuc = ?, NgayPhoi = ?, 
-                        MaNVThucHien = ?, GhiChu = ?, TrangThai = ? 
-                        WHERE SinhSan = ?";
-                    $stmt = $this->pdo->prepare($sql);
-                    $stmt->execute([$maNai, $maDuc, $NgayPhoi, $maNV, $ghiChu, $trangThai, $id]);
+                    // Thêm MaSinhSan vào danh sách cột INSERT
+                    $sql = "INSERT INTO sinhsan 
+                    (SinhSan, MaHeoNai, MaHeoDuc, NgayPhoi, MaNVThucHien, GhiChu, TrangThai";
+                    $params = [$finalMaSS, $maNai, $maDuc, $NgayPhoi, $maNV, $ghiChu, 'DangTheoDoi'];
 
-                    $_SESSION['success'] = "Cập nhật thành công!";
-                    header('Location: index.php?url=sinhsan/index');
+                    if ($kh_id > 0) {
+                        $sql .= ", MaKH";
+                        $params[] = $kh_id;
+                    }
+
+                    $sql .= ") VALUES (?" . str_repeat(',?', count($params) - 1) . ")";
+                    $stmt = $this->pdo->prepare($sql);
+                    $stmt->execute($params);
+
+                    $ngayDuSinh = date('d/m/Y', strtotime($NgayPhoi . ' +114 days'));
+                    $_SESSION['success'] = "Ghi nhận thành công phiếu $finalMaSS! Dự sinh: $ngayDuSinh";
+
+                    $redirect = $kh_id > 0
+                        ? "index.php?url=khachhang/phahe&kh_id=$kh_id"
+                        : "index.php?url=sinhsan";
+
+                    header("Location: $redirect");
                     exit;
                 } catch (PDOException $e) {
                     $errors[] = "Lỗi database: " . $e->getMessage();
@@ -296,16 +277,131 @@ class SinhSanController
             }
         }
 
-        // GỌI VIEW: Quan trọng là truyền đúng tên 'data'
+        // --- 4. GỌI VIEW ---
+        $this->view('add', [
+            'errors'          => $errors,
+            'dsHeoNai'        => $dsHeoNai,
+            'dsHeoDuc'        => $dsHeoDuc,
+            'dsNhanVien'      => $dsNhanVien,
+            'kh_id'           => $kh_id,
+            'autoMaSinhSan'   => $autoSinhSan // Truyền biến này sang View
+        ]);
+    }
+    public function edit($id = null)
+    {
+        if ($id === null) $id = $_GET['id'] ?? null;
+        $kh_id = (int)($_GET['kh_id'] ?? 0);
+
+        if (!$id) {
+            $_SESSION['error'] = "Không tìm thấy mã phiếu!";
+            header('Location: index.php?url=sinhsan');
+            exit;
+        }
+
+        // 1. Lấy dữ liệu phiếu hiện tại
+        $stmt = $this->pdo->prepare("SELECT * FROM sinhsan WHERE SinhSan = ?");
+        $stmt->execute([$id]);
+        $sinhSan = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$sinhSan) {
+            $_SESSION['error'] = "Phiếu sinh sản không tồn tại!";
+            header('Location: index.php?url=sinhsan');
+            exit;
+        }
+
+        // 2. Lấy danh sách Heo Đực & Heo Cái (Tối ưu để không bị trống)
+        if ($kh_id > 0) {
+            // Trường hợp heo của khách hàng
+            $dsHeoDucStmt = $this->pdo->prepare("
+            SELECT DISTINCT h.MaHeo, h.CanNangHienTai 
+            FROM heo h INNER JOIN xuatchuong xc ON h.MaHeo = xc.MaHeo 
+            WHERE xc.MaKH = ? AND h.GioiTinh = 'D'
+            UNION 
+            SELECT MaHeo, CanNangHienTai FROM heo WHERE MaHeo = ?
+        ");
+            $dsHeoDucStmt->execute([$kh_id, $sinhSan['MaHeoDuc']]);
+            $dsHeoDuc = $dsHeoDucStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $dsHeoNaiStmt = $this->pdo->prepare("
+            SELECT DISTINCT h.MaHeo, h.CanNangHienTai 
+            FROM heo h INNER JOIN xuatchuong xc ON h.MaHeo = xc.MaHeo 
+            WHERE xc.MaKH = ? AND h.GioiTinh = 'C'
+            UNION 
+            SELECT MaHeo, CanNangHienTai FROM heo WHERE MaHeo = ?
+        ");
+            $dsHeoNaiStmt->execute([$kh_id, $sinhSan['MaHeoNai']]);
+            $dsHeoNai = $dsHeoNaiStmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            // Trường hợp heo tại trại: Lấy heo bình thường HOẶC con heo đang nằm trong phiếu này
+            $dsHeoDucStmt = $this->pdo->prepare("
+            SELECT MaHeo, CanNangHienTai FROM heo 
+            WHERE (GioiTinh = 'D' AND TrangThaiHeo = 'Bình thường') OR MaHeo = ?
+        ");
+            $dsHeoDucStmt->execute([$sinhSan['MaHeoDuc']]);
+            $dsHeoDuc = $dsHeoDucStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $dsHeoNaiStmt = $this->pdo->prepare("
+            SELECT MaHeo, CanNangHienTai FROM heo 
+            WHERE (GioiTinh = 'C' AND TrangThaiHeo = 'Bình thường') OR MaHeo = ?
+        ");
+            $dsHeoNaiStmt->execute([$sinhSan['MaHeoNai']]);
+            $dsHeoNai = $dsHeoNaiStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $dsNhanVien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien ORDER BY HoTen ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $errors = [];
+
+        // 3. Xử lý lưu dữ liệu (POST)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $maNai       = trim($_POST['MaHeoNai'] ?? '');
+            $maDuc       = trim($_POST['MaHeoDuc'] ?? '');
+            $rawNgayPhoi = trim($_POST['NgayPhoi'] ?? '');
+            $ghiChu      = trim($_POST['GhiChu'] ?? '');
+            $maNV        = !empty($_POST['MaNVThucHien']) ? $_POST['MaNVThucHien'] : null;
+            $trangThai   = $_POST['TrangThai'] ?? 'DangTheoDoi';
+
+            // Dữ liệu đẻ thực tế
+            $ngayDe      = !empty($_POST['NgayDeThucTe']) ? $_POST['NgayDeThucTe'] : null;
+            $soConSong   = isset($_POST['SoConSong']) ? (int)$_POST['SoConSong'] : null;
+            $soConChet   = isset($_POST['SoConChet']) ? (int)$_POST['SoConChet'] : 0;
+
+            $NgayPhoi = ($rawNgayPhoi !== '') ? date('Y-m-d', strtotime(str_replace('/', '-', $rawNgayPhoi))) : null;
+
+            if (empty($maNai)) $errors[] = "Vui lòng chọn heo cái!";
+            if (empty($maDuc)) $errors[] = "Vui lòng chọn heo đực!";
+            if (!$NgayPhoi) $errors[] = "Ngày phối không hợp lệ!";
+
+            if (empty($errors)) {
+                try {
+                    // Sửa lỗi: Sử dụng cột 'SinhSan' làm khóa chính, không dùng 'MaSinhSan'
+                    $sql = "UPDATE sinhsan SET 
+                        MaHeoNai = ?, MaHeoDuc = ?, NgayPhoi = ?, 
+                        MaNVThucHien = ?, GhiChu = ?, TrangThai = ?, 
+                        NgayDe = ?, SoConSong = ?, SoConChet = ? 
+                        WHERE SinhSan = ?";
+
+                    $params = [$maNai, $maDuc, $NgayPhoi, $maNV, $ghiChu, $trangThai, $ngayDe, $soConSong, $soConChet, $id];
+
+                    $this->pdo->prepare($sql)->execute($params);
+
+                    $_SESSION['success'] = "Cập nhật thành công!";
+                    header("Location: " . ($kh_id > 0 ? "index.php?url=khachhang/phahe&kh_id=$kh_id" : "index.php?url=sinhsan"));
+                    exit;
+                } catch (PDOException $e) {
+                    $errors[] = "Lỗi database: " . $e->getMessage();
+                }
+            }
+        }
+
         $this->view('edit', [
-            'data'       => $sinhSan, // Đổi từ 'sinhSan' thành 'data' để khớp với View
+            'data'       => $sinhSan,
             'dsHeoNai'   => $dsHeoNai,
             'dsHeoDuc'   => $dsHeoDuc,
             'dsNhanVien' => $dsNhanVien,
-            'errors'     => $errors
+            'errors'     => $errors,
+            'kh_id'      => $kh_id
         ]);
     }
-
 
     // === XÓA PHIẾU SINH SẢN ===
     public function delete($id = null)
@@ -361,18 +457,114 @@ class SinhSanController
         exit;
     }
 
+
+    public function khachAdd($kh_id = null)
+    {
+        $kh_id = (int)($kh_id ?? $_GET['kh_id'] ?? 0);
+
+        if ($kh_id <= 0) {
+            $_SESSION['error'] = "Không xác định khách hàng!";
+            header('Location: index.php?url=sinhsan');
+            exit;
+        }
+
+        // Lấy thông tin khách để hiển thị tiêu đề (tùy chọn)
+        // Giả sử bạn có KhachHangModel, nếu không thì bỏ qua
+        // $khach = $this->khachModel->getById($kh_id); // Nếu có inject model
+
+        $errors = [];
+
+        // Heo đực đã xuất cho khách này
+        $dsHeoDucStmt = $this->pdo->prepare("
+        SELECT DISTINCT h.MaHeo, h.CanNangHienTai, h.GioiTinh, h.NgaySinh
+        FROM heo h
+        INNER JOIN xuatchuong xc ON h.MaHeo = xc.MaHeo
+        WHERE xc.MaKH = ? AND h.GioiTinh = 'D'
+        ORDER BY h.MaHeo DESC
+    ");
+        $dsHeoDucStmt->execute([$kh_id]);
+        $dsHeoDuc = $dsHeoDucStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Heo cái đã xuất cho khách này
+        $dsHeoNaiStmt = $this->pdo->prepare("
+        SELECT DISTINCT h.MaHeo, h.CanNangHienTai, h.GioiTinh, h.NgaySinh
+        FROM heo h
+        INNER JOIN xuatchuong xc ON h.MaHeo = xc.MaHeo
+        WHERE xc.MaKH = ? AND h.GioiTinh = 'C'
+        ORDER BY h.MaHeo DESC
+    ");
+        $dsHeoNaiStmt->execute([$kh_id]);
+        $dsHeoNai = $dsHeoNaiStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($dsHeoDuc) && empty($dsHeoNai)) {
+            $_SESSION['error'] = "Khách này chưa có heo nào được xuất (không thể ghi phối giống).";
+            header("Location: index.php?url=khachhang/phahe&kh_id=$kh_id");
+            exit;
+        }
+
+        $dsNhanVien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien ORDER BY HoTen ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $maNai       = trim($_POST['MaHeoNai'] ?? '');
+            $maDuc       = trim($_POST['MaHeoDuc'] ?? '');
+            $rawNgayPhoi = trim($_POST['NgayPhoi'] ?? '');
+            $ghiChu      = trim($_POST['GhiChu'] ?? '');
+            $maNV        = $_POST['MaNVThucHien'] ?? null;
+
+            $NgayPhoi = null;
+            if ($rawNgayPhoi !== '') {
+                $NgayPhoi = date('Y-m-d', strtotime(str_replace('/', '-', $rawNgayPhoi)));
+            }
+
+            if (empty($maNai)) $errors[] = "Chọn heo cái!";
+            if (empty($maDuc)) $errors[] = "Chọn heo đực!";
+            if (!$NgayPhoi) $errors[] = "Ngày phối không hợp lệ!";
+            if ($maNai === $maDuc) $errors[] = "Heo cái và đực không được trùng!";
+            if (strtotime($NgayPhoi) > time()) $errors[] = "Ngày phối không được lớn hơn hôm nay!";
+
+            if (empty($errors)) {
+                try {
+                    $stmt = $this->pdo->prepare("
+                    INSERT INTO sinhsan 
+                    (MaHeoNai, MaHeoDuc, NgayPhoi, MaNVThucHien, GhiChu, TrangThai, MaKH) 
+                    VALUES (?, ?, ?, ?, ?, 'DangTheoDoi', ?)
+                ");
+                    $stmt->execute([$maNai, $maDuc, $NgayPhoi, $maNV, $ghiChu, $kh_id]);
+
+                    $ngayDuSinh = date('d/m/Y', strtotime($NgayPhoi . ' +114 days'));
+                    $_SESSION['success'] = "Ghi nhận phối giống cho khách thành công! Đực #$maDuc phối với Cái #$maNai - Dự sinh: $ngayDuSinh";
+
+                    header("Location: index.php?url=khachhang/phahe&kh_id=$kh_id");
+                    exit;
+                } catch (PDOException $e) {
+                    $errors[] = "Lỗi database: " . $e->getMessage();
+                }
+            }
+        }
+
+        // Gọi view riêng cho phối khách (tạo file khach_add.php)
+        $this->view('khach_add', [
+            'errors'      => $errors,
+            'dsHeoNai'    => $dsHeoNai,
+            'dsHeoDuc'    => $dsHeoDuc,
+            'dsNhanVien'  => $dsNhanVien,
+            'kh_id'       => $kh_id
+        ]);
+    }
+
+
     // === GHI NHẬN ĐẺ ===
     public function ghiNhanDe($id = null)
     {
-        $id = (int)($id ?? $_GET['id'] ?? 0);
+        // Lấy ID từ GET (khi load form) hoặc POST (khi nhấn Lưu)
+        $id = (int)($id ?? $_GET['id'] ?? $_POST['ghiNhanDe_id'] ?? 0);
 
-        // Nếu không có ID → quay về trang chính
         if (!$id) {
             header('Location: index.php?url=sinhsan');
             exit;
         }
 
-        // LẤY THÔNG TIN PHIẾU SINH SẢN
+        // 1. LẤY THÔNG TIN ĐỂ HIỂN THỊ (GET)
         $stmt = $this->pdo->prepare("
         SELECT ss.*, h.ViTriChuong
         FROM sinhsan ss
@@ -388,16 +580,10 @@ class SinhSanController
             exit;
         }
 
-        // Nếu đã ghi nhận đẻ rồi → không cho làm lại
-        if ($sinhSan['SoConSong'] !== null) {
-            $_SESSION['error'] = "Phiếu này đã được ghi nhận đẻ rồi!";
-            header('Location: index.php?url=sinhsan');
-            exit;
-        }
-
-        // XỬ LÝ KHI NHẤN NÚT "GHI NHẬN" (POST)
+        // 2. XỬ LÝ KHI NHẤN NÚT "GHI NHẬN" (POST)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ngayDe   = trim($_POST['NgayDe'] ?? '');
+            $soSong   = (int)($_POST['SoConSong'] ?? 0); // Lấy từ form thay vì cố định 10
             $soChet   = (int)($_POST['SoConChet'] ?? 0);
             $maNVDe   = trim($_POST['MaNVDe'] ?? '');
             $ghiChuDe = trim($_POST['GhiChuDe'] ?? '');
@@ -405,38 +591,32 @@ class SinhSanController
             if (empty($ngayDe)) {
                 $_SESSION['error'] = "Vui lòng chọn ngày đẻ thực tế!";
             } else {
-                $soSong = 10; // Cố định 10 con sống theo yêu cầu
-
+                // Chuẩn bị dữ liệu cập nhật, thêm TrangThai = 'ThanhCong'
                 $dataUpdate = [
                     'NgayDe'    => $ngayDe,
                     'SoConSong' => $soSong,
                     'SoConChet' => $soChet,
                     'MaNVDe'    => $maNVDe ?: null,
                     'GhiChuDe'  => $ghiChuDe ?: null,
+                    'TrangThai' => 'ThanhCong'
                 ];
 
                 $result = $this->model->updateGhiNhanDe($id, $dataUpdate);
 
                 if (isset($result['status']) && $result['status'] === true) {
-                    $_SESSION['success'] = "Ghi nhận đẻ thành công! Phiếu #{$id} - 10 con sống.";
+                    $_SESSION['success'] = "Ghi nhận đẻ thành công cho heo nái #" . $sinhSan['MaHeoNai'];
                 } else {
-                    $_SESSION['error'] = "Lỗi ghi nhận đẻ: " . ($result['message'] ?? 'Không xác định');
+                    $_SESSION['error'] = "Lỗi database: " . ($result['message'] ?? 'Không thể cập nhật');
                 }
             }
 
-            // === LUÔN REDIRECT VỀ TRANG CHÍNH SINH SẢN SAU KHI XỬ LÝ ===
             header('Location: index.php?url=sinhsan');
             exit;
         }
 
-        // ================== HIỂN THỊ FORM (CHỈ KHI GET) ==================
+        // 3. HIỂN THỊ FORM
         $ngayDuSinh = date('Y-m-d', strtotime($sinhSan['NgayPhoi'] . ' +114 days'));
-
-        $dsNhanVien = $this->pdo->query("
-        SELECT MaNV, HoTen 
-        FROM nhanvien 
-        ORDER BY HoTen
-    ")->fetchAll(PDO::FETCH_ASSOC);
+        $dsNhanVien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien ORDER BY HoTen")->fetchAll(PDO::FETCH_ASSOC);
 
         $this->view('ghiNhanDe', compact('sinhSan', 'ngayDuSinh', 'dsNhanVien'));
     }

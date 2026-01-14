@@ -36,6 +36,17 @@
         <form action="" method="post" class="bg-white rounded-2xl shadow-2xl p-8">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
+                <!-- Mã Phiếu Xuất Chuồng tự động (chỉ số thuần, không pad 0) -->
+                <div class="lg:col-span-1">
+                    <label class="block text-gray-700 font-bold mb-2">
+                        Mã Phiếu Xuất <span class="text-sm text-gray-500">(Hệ thống tự cấp)</span>
+                    </label>
+                    <input type="text"
+                        value="<?= htmlspecialchars($autoMaXuat ?? '1') ?>"
+                        readonly
+                        class="w-full px-5 py-4 border-2 rounded-xl bg-gray-100 text-emerald-700 font-bold text-3xl cursor-not-allowed text-center">
+                </div>
+
                 <!-- Chọn Heo -->
                 <div class="lg:col-span-1">
                     <label class="block text-gray-700 font-bold mb-2">
@@ -67,7 +78,7 @@
                         class="w-full px-5 py-4 border-2 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-600 text-lg">
                 </div>
 
-                <!-- Số lượng (thường là 1 con) -->
+                <!-- Số lượng -->
                 <div>
                     <label class="block text-gray-700 font-bold mb-2">
                         Số Lượng (con) <span class="text-red-500">*</span>
@@ -100,11 +111,11 @@
                         class="w-full px-5 py-4 border-2 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-600 text-lg">
                 </div>
 
-                <!-- Tổng tiền (tự động) -->
+                <!-- Tổng tiền (tự động tính) -->
                 <div class="lg:col-span-1">
                     <label class="block text-gray-700 font-bold mb-2">Tổng Tiền Thu Về</label>
                     <div class="bg-gradient-to-r from-emerald-600 to-green-700 text-white text-3xl font-bold 
-                                px-8 py-6 rounded-2xl text-right shadow-xl">
+                        px-8 py-6 rounded-2xl text-right shadow-xl">
                         <span id="tongtien">0</span> <sup>đ</sup>
                     </div>
                 </div>
@@ -117,7 +128,7 @@
                         <?php foreach ($dsKhachHang ?? [] as $kh): ?>
                             <option value="<?= $kh['MaKH'] ?>"
                                 <?= ($_POST['MaKH'] ?? '') == $kh['MaKH'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($kh['TenKH']) ?> (<?= $kh['DienThoai'] ?? '' ?>)
+                                <?= htmlspecialchars($kh['TenKH']) ?> (<?= $kh['SDT'] ?? '' ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -164,7 +175,7 @@
                 </a>
                 <button type="submit"
                     class="px-12 py-4 bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-emerald-700 hover:to-emerald-900 
-                               text-white font-bold rounded-xl shadow-2xl transition transform hover:scale-105 flex items-center gap-4">
+                       text-white font-bold rounded-xl shadow-2xl transition transform hover:scale-105 flex items-center gap-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>

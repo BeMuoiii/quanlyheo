@@ -4,8 +4,8 @@
 
 <div class="ml-64 p-8 min-h-screen bg-gray-50">
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-8">Thêm khách hàng mới</h1>
-        <a href="index.php?url=heo" class="text-gray-600 hover:text-gray-800 transition">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Thêm khách hàng mới</h1>
+        <a href="index.php?url=khachhang" class="text-gray-600 hover:text-gray-800 transition">
             <i class="fas fa-arrow-left text-2xl"></i>
         </a>
 
@@ -37,11 +37,18 @@
         <?php endif; ?>
 
         <form action="" method="post" class="bg-white rounded-2xl shadow-xl p-8">
-            <!-- CSRF Token (bắt buộc - bạn cần tạo ở header hoặc middleware) -->
-            <!-- Ví dụ tạo token: if(empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); -->
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Mã Khách Hàng tự động (chỉ số thuần: 1, 2, 3...) -->
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">
+                        Mã Khách Hàng <span class="text-sm text-gray-500">(Hệ thống tự cấp)</span>
+                    </label>
+                    <input type="text"
+                        value="<?= htmlspecialchars($autoMaKH ?? '1') ?>"
+                        readonly
+                        class="w-full px-4 py-3 border rounded-lg bg-gray-100 text-emerald-700 font-bold text-2xl cursor-not-allowed text-center">
+                </div>
+
                 <!-- Họ tên -->
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">
@@ -49,17 +56,17 @@
                     </label>
                     <input type="text" name="TenKH" required
                         value="<?= htmlspecialchars($data['TenKH'] ?? '') ?>"
-                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500">
                 </div>
 
-                <!-- Số điện thoại -->
+                <!-- SĐT -->
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">
                         Số điện thoại <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="SDT" required maxlength="10"
-                        pattern="0[3|5|7|8|9][0-9]{8}"
-                        title="Số điện thoại Việt Nam: bắt đầu bằng 03,05,07,08,09 và có đúng 10 số"
+                        pattern="0[3-9][0-9]{8}"
+                        title="Số di động Việt Nam 10 số"
                         value="<?= htmlspecialchars($data['SDT'] ?? '') ?>"
                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500">
                 </div>
@@ -67,21 +74,18 @@
                 <!-- Giới tính -->
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">Giới tính</label>
-                    <div class="flex items-center space-x-8">
-                        <?php $gioiTinh = $data['GioiTinh'] ?? 'D'; ?>
+                    <div class="flex items-center space-x-6">
+                        <?php $gt = $data['GioiTinh'] ?? 'Nam'; ?>
                         <label class="inline-flex items-center">
-                            <input type="radio" name="GioiTinh" value="Nam" <?= $gioiTinh === 'Nam' ? 'checked' : '' ?>
-                                class="form-radio text-emerald-600">
+                            <input type="radio" name="GioiTinh" value="Nam" <?= $gt === 'Nam' ? 'checked' : '' ?> class="form-radio text-emerald-600">
                             <span class="ml-2">Nam</span>
                         </label>
                         <label class="inline-flex items-center">
-                            <input type="radio" name="GioiTinh" value="Nữ" <?= $gioiTinh === 'Nữ' ? 'checked' : '' ?>
-                                class="form-radio text-emerald-600">
+                            <input type="radio" name="GioiTinh" value="Nữ" <?= $gt === 'Nữ' ? 'checked' : '' ?> class="form-radio text-emerald-600">
                             <span class="ml-2">Nữ</span>
                         </label>
                         <label class="inline-flex items-center">
-                            <input type="radio" name="GioiTinh" value="D" <?= $gioiTinh === 'D' ? 'checked' : '' ?>
-                                class="form-radio text-emerald-600">
+                            <input type="radio" name="GioiTinh" value="Khác" <?= $gt === 'Khác' ? 'checked' : '' ?> class="form-radio text-emerald-600">
                             <span class="ml-2">Khác</span>
                         </label>
                     </div>
@@ -117,39 +121,23 @@
                     <select name="MaNVPhuTrach" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500">
                         <option value="">-- Chưa phân công --</option>
                         <?php foreach ($nhanvien as $nv): ?>
-                            <option value="<?= htmlspecialchars($nv['MaNV']) ?>"
+                            <option value="<?= $nv['MaNV'] ?>"
                                 <?= ($data['MaNVPhuTrach'] ?? '') == $nv['MaNV'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($nv['HoTen']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
-                <!-- Chuồng nhập thường xuyên -->
-                <div>
-                    <label class="block text-gray-700 font-medium mb-2">
-                        Nhập heo từ chuồng <span class="text-sm text-gray-500">(thường xuyên)</span>
-                    </label>
-                    <select name="ChuongNhap" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500">
-                        <option value="Thường">Thường (mặc định)</option>
-                        <!-- Nếu bạn có danh sách chuồng động thì thay bằng foreach -->
-                        <!-- Ví dụ: foreach ($danhSachChuong as $chuong) ... -->
-                        <option value="Chuồng A" <?= ($data['ChuongNhap'] ?? 'Thường') === 'Chuồng A' ? 'selected' : '' ?>>Chuồng A</option>
-                        <option value="Chuồng B" <?= ($data['ChuongNhap'] ?? 'Thường') === 'Chuồng B' ? 'selected' : '' ?>>Chuồng B</option>
-                        <!-- Thêm các chuồng khác nếu cần -->
-                    </select>
-                    <p class="text-xs text-gray-500 mt-1">Dùng để lọc nhanh khi xuất chuồng</p>
-                </div>
             </div>
 
-            <div class="mt-10 flex gap-4">
+            <div class="mt-10 flex justify-center gap-6">
                 <button type="submit"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-semibold transition transform hover:scale-105">
-                    Thêm khách hàng
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-semibold transition transform hover:scale-105 flex items-center">
+                    <i class="fas fa-user-plus mr-3"></i> Thêm khách hàng
                 </button>
                 <a href="index.php?url=khachhang"
-                    class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-xl font-semibold transition">
-                    Quay lại danh sách
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-4 rounded-xl font-semibold transition flex items-center">
+                    <i class="fas fa-arrow-left mr-3"></i> Quay lại danh sách
                 </a>
             </div>
         </form>

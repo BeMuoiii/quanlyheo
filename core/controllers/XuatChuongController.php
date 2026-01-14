@@ -135,11 +135,15 @@ class XuatChuongController
         $dsKhachHang = $this->pdo->query("SELECT MaKH, TenKH, SDT FROM khachhang ORDER BY TenKH")->fetchAll(PDO::FETCH_ASSOC);
         $dsNhanVien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien ORDER BY HoTen")->fetchAll(PDO::FETCH_ASSOC);
 
-        $errors = [];
+        // === TỰ ĐỘNG SINH MÃ PHIẾU XUẤT CHUỒNG CHỈ SỐ THUẦN (1, 2, 3...) ===
+        // Không pad 0 nữa, chỉ hiển thị số thực (dựa trên số lượng bản ghi + 1)
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM xuatchuong");
+        $count = $stmt->fetchColumn();
+        $autoMaXuat = $count + 1; // 1, 2, 3...
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $MaHeo        = trim($_POST['MaHeo'] ?? '');
-            $MaKH  = !empty($_POST['MaKH']) ? (int)$_POST['MaKH'] : null;
+            $MaKH         = !empty($_POST['MaKH']) ? $_POST['MaKH'] : null;
             $NgayXuat     = $_POST['NgayXuat'] ?? date('Y-m-d H:i:s');
             $CanNangXuat  = (float)str_replace(',', '.', $_POST['CanNangXuat'] ?? 0);
             $SoLuong      = (int)($_POST['SoLuong'] ?? 1);
@@ -159,10 +163,9 @@ class XuatChuongController
                 try {
                     $this->pdo->beginTransaction();
 
-                    // ĐÃ SỬA ĐÚNG TÊN CỘT: NgayXuat, ThanhTien, MaNVThucHien
                     $sql = "INSERT INTO xuatchuong 
-                        (MaHeo, MaKH, NgayXuat, CanNangXuat, SoLuong, DonGia, ThanhTien, LyDoXuat, GhiChu, MaNVThucHien)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    (MaHeo, MaKH, NgayXuat, CanNangXuat, SoLuong, DonGia, ThanhTien, LyDoXuat, GhiChu, MaNVThucHien)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     $this->pdo->prepare($sql)->execute([
                         $MaHeo,
                         $MaKH,
@@ -176,13 +179,12 @@ class XuatChuongController
                         $MaNVThucHien
                     ]);
 
-                    // Cập nhật trạng thái heo
                     $this->pdo->prepare("UPDATE heo SET TrangThaiHeo = 'Đã xuất' WHERE MaHeo = ?")
                         ->execute([$MaHeo]);
 
                     $this->pdo->commit();
 
-                    $_SESSION['success'] = "Xuất thành công heo <strong>$MaHeo</strong> – Tổng tiền: <strong>" . number_format($ThanhTien) . "đ</strong>";
+                    $_SESSION['success'] = "Xuất chuồng thành công! Phiếu mã <strong>{$autoMaXuat}</strong> – Heo <strong>$MaHeo</strong> – Tổng tiền: <strong>" . number_format($ThanhTien) . "đ</strong>";
                     header('Location: index.php?url=xuatchuong');
                     exit;
                 } catch (Exception $e) {
@@ -190,9 +192,11 @@ class XuatChuongController
                     $errors[] = "Lỗi hệ thống: " . $e->getMessage();
                 }
             }
+
+            // Khi lỗi → mã vẫn giữ nguyên (vì đã +1 rồi, nhưng lần sau sẽ đúng)
         }
 
-        $this->view('add', compact('errors', 'dsHeoChuaXuat', 'dsKhachHang', 'dsNhanVien'));
+        $this->view('add', compact('errors', 'dsHeoChuaXuat', 'dsKhachHang', 'dsNhanVien', 'autoMaXuat'));
     }
 
 

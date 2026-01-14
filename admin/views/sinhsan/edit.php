@@ -71,7 +71,7 @@
 
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">Trạng Thái</label>
-                    <select name="TrangThai" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500">
+                    <select name="TrangThai" id="selectTrangThai" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500">
                         <option value="DangTheoDoi" <?= ($data['TrangThai'] == 'DangTheoDoi') ? 'selected' : '' ?>>Đang theo dõi</option>
                         <option value="ThatBai" <?= ($data['TrangThai'] == 'ThatBai') ? 'selected' : '' ?>>Thất bại</option>
                         <option value="ThanhCong" <?= ($data['TrangThai'] == 'ThanhCong') ? 'selected' : '' ?>>Đã đẻ (Thành công)</option>
@@ -85,9 +85,8 @@
                 </div>
 
 
-                <div id="groupNgayDeThucTe">
-                    <label class="block text-gray-700 font-medium mb-2">Ngày Đẻ Thực Tế <span class="text-red-500 font-bold">*</span></label>
-                    <input type="date" name="NgayDeThucTe" id="inputNgayDeThucTe"
+                <div id="groupGhiNhanDe"> <label class="block text-gray-700 font-medium mb-2">Ngày Đẻ Thực Tế <span class="text-red-500 font-bold">*</span></label>
+                    <input type="date" name="NgayDeThucTe" id="inputNgayDe"
                         value="<?= !empty($data['NgayDeThucTe']) ? date('Y-m-d', strtotime($data['NgayDeThucTe'])) : '' ?>"
                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
@@ -110,65 +109,66 @@
 </div>
 
 <script>
-    // ngày sinh thực
-    const selectTrangThai = document.querySelector('select[name="TrangThai"]');
-    const inputNgayDeThucTe = document.getElementById('inputNgayDeThucTe');
-    const groupNgayDe = document.getElementById('groupNgayDeThucTe');
-
-    function checkTrangThai() {
-        if (selectTrangThai.value === 'ThanhCong') {
-            // Nếu đẻ thành công, đổi màu viền để nhắc nhở và có thể thêm thuộc tính required
-            inputNgayDeThucTe.classList.add('border-blue-500', 'bg-blue-50');
-            inputNgayDeThucTe.required = true;
-        } else {
-            inputNgayDeThucTe.classList.remove('border-blue-500', 'bg-blue-50');
-            inputNgayDeThucTe.required = false;
-        }
-    }
-
-    selectTrangThai.addEventListener('change', checkTrangThai);
-
-    // Chạy kiểm tra ngay khi load trang
-    window.addEventListener('DOMContentLoaded', checkTrangThai);
-
-    // Giữ nguyên logic tính ngày dự sinh của bạn ở đây...
-    const inputNgayPhoi = document.getElementById('inputNgayPhoi');
-    const displayNgayDuSinh = document.getElementById('displayNgayDuSinh');
-
-    function tinhNgayDuSinh() {
-        if (inputNgayPhoi.value) {
-            const ngayPhoi = new Date(inputNgayPhoi.value);
-            // Chu kỳ mang thai heo thường là 3 tháng 3 tuần 3 ngày (114 ngày)
-            ngayPhoi.setDate(ngayPhoi.getDate() + 114);
-
-            const d = ngayPhoi.getDate().toString().padStart(2, '0');
-            const m = (ngayPhoi.getMonth() + 1).toString().padStart(2, '0');
-            const y = ngayPhoi.getFullYear();
-            displayNgayDuSinh.value = `${d}/${m}/${y}`;
-        }
-    }
-    inputNgayPhoi.addEventListener('change', tinhNgayDuSinh);
-    tinhNgayDuSinh();
-
-
     document.addEventListener('DOMContentLoaded', function() {
+        // 1. Khai báo các phần tử
+        const selectTrangThai = document.getElementById('selectTrangThai');
+        const groupGhiNhanDe = document.getElementById('groupGhiNhanDe');
+        const inputNgayDe = document.getElementById('inputNgayDe');
         const inputNgayPhoi = document.getElementById('inputNgayPhoi');
         const displayNgayDuSinh = document.getElementById('displayNgayDuSinh');
 
+        // 2. Hàm xử lý hiển thị phần ghi nhận đẻ
+        function xuLyTrangThai() {
+            if (selectTrangThai.value === 'ThanhCong') {
+                // Hiển thị khung ghi nhận đẻ
+                groupGhiNhanDe.classList.remove('hidden');
+                inputNgayDe.required = true;
+                inputNgayDe.classList.add('border-blue-500', 'bg-blue-50');
+            } else {
+                // Ẩn khung ghi nhận đẻ
+                groupGhiNhanDe.classList.add('hidden');
+                inputNgayDe.required = false;
+                inputNgayDe.classList.remove('border-blue-500', 'bg-blue-50');
+            }
+        }
+
+        // 3. Hàm tính ngày dự sinh (114 ngày)
         function tinhNgayDuSinh() {
             const val = inputNgayPhoi.value;
             if (val) {
                 const ngayPhoi = new Date(val);
                 ngayPhoi.setDate(ngayPhoi.getDate() + 114);
+
                 const d = String(ngayPhoi.getDate()).padStart(2, '0');
                 const m = String(ngayPhoi.getMonth() + 1).padStart(2, '0');
                 const y = ngayPhoi.getFullYear();
-                displayNgayDuSinh.value = `${d}/${m}/${y}`;
+
+                displayNgayDuSinh.value = d + '/' + m + '/' + y;
+            } else {
+                displayNgayDuSinh.value = 'Chưa có ngày phối';
             }
         }
 
-        tinhNgayDuSinh(); // Gọi ngay khi load trang
+        // 4. Kiểm tra logic ngày đẻ (Không cho phép đẻ trước khi phối)
+        inputNgayDe.addEventListener('change', function() {
+            if (inputNgayPhoi.value && this.value) {
+                const ngayPhoi = new Date(inputNgayPhoi.value);
+                const ngayDe = new Date(this.value);
+
+                if (ngayDe < ngayPhoi) {
+                    alert('Lỗi: Ngày đẻ thực tế không thể trước ngày phối giống!');
+                    this.value = '';
+                }
+            }
+        });
+
+        // 5. Đăng ký sự kiện
+        selectTrangThai.addEventListener('change', xuLyTrangThai);
         inputNgayPhoi.addEventListener('change', tinhNgayDuSinh);
+
+        // 6. Chạy ngay khi tải trang để khớp dữ liệu cũ
+        xuLyTrangThai();
+        tinhNgayDuSinh();
     });
 </script>
 

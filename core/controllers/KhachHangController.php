@@ -21,33 +21,26 @@ class KhachHangController
     // ==================== DANH SÁCH ====================
     public function index()
     {
-        // Lấy dữ liệu từ bộ lọc (giống bên Quản lý Heo)
         $keyword = trim($_GET['timkiem'] ?? '');
         $sort    = $_GET['sort'] ?? 'MaKH';
         $order   = strtoupper($_GET['order'] ?? 'DESC');
 
-        // Các cột cho phép sắp xếp của Khách hàng
-        $allowed = ['MaKH', 'TenKH', 'SDT', 'DiaChi'];
+        // Khớp với $allowedSorts trong Model
+        $allowed = ['MaKH', 'TenKH', 'SDT', 'DiaChi', 'NgaySinh'];
         if (!in_array($sort, $allowed)) {
             $sort = 'MaKH';
         }
         $order = ($order === 'ASC') ? 'ASC' : 'DESC';
 
-        // === PHÂN TRANG ===
         $page = max(1, (int)($_GET['page'] ?? 1));
         $limit = 10;
         $offset = ($page - 1) * $limit;
 
-        // 1. Lấy tổng số lượng khách hàng sau khi lọc để tính số trang
-        // Model của bạn cần được cập nhật hàm getTotal($keyword)
+        // Gọi hàm từ Model
         $totalRecords = $this->model->getTotal($keyword);
         $totalPages = ceil($totalRecords / $limit);
-
-        // 2. Lấy danh sách khách hàng theo các tiêu chí lọc và phân trang
-        // Model của bạn cần được cập nhật hàm getAll($keyword, $sort, $order, $limit, $offset)
         $ds = $this->model->getAll($keyword, $sort, $order, $limit, $offset);
 
-        // 3. Truyền dữ liệu ra View
         $this->view('index', [
             'dsKhachHang'  => $ds,
             'keyword'      => $keyword,
@@ -59,213 +52,226 @@ class KhachHangController
             'limit'        => $limit
         ]);
     }
-    // ==================== THÊM ====================
+
+    // ==================== THÊM MỚI ====================
     public function add()
     {
         $errors = [];
-        $data = []; // Để giữ dữ liệu cũ khi có lỗi
+        $data = [];
 
-        // Load danh sách nhân viên (luôn cần cho form)
+        // Load danh sách nhân viên
         $nhanvien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien WHERE TrangThai IN ('Chính thức','Thử việc') ORDER BY HoTen")->fetchAll();
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // === CSRF PROTECTION (bắt buộc thêm) ===
-            // Bạn cần tạo token ở đầu trang hoặc middleware:
-            // $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-            // if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
-            //     $errors[] = 'Lỗi bảo mật, vui lòng thử lại.';
-            // }
+        // === TỰ ĐỘNG SINH MÃ KHÁCH HÀNG CHỈ LÀ SỐ THUẦN (1, 2, 3...) ===
+        // Không padding zero (không dùng 001, 002...)
+        // Sử dụng ORDER BY MaKH + 0 để lấy mã lớn nhất đúng thứ tự số học (tránh lỗi sort string)
+        $stmt = $this->pdo->query("SELECT MaKH FROM khachhang ORDER BY MaKH + 0 DESC LIMIT 1");
+        $last = $stmt->fetchColumn();
 
-            // Lấy và làm sạch dữ liệu
+        if ($last !== false && $last !== null) {
+            $nextNumber = (int)$last + 1;
+        } else {
+            $nextNumber = 1;
+        }
+
+        // Giá trị mặc định để hiển thị trong form
+        $autoMaKH = $nextNumber;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'TenKH'        => trim($_POST['TenKH'] ?? ''),
                 'SDT'          => trim($_POST['SDT'] ?? ''),
                 'Email'        => trim($_POST['Email'] ?? ''),
                 'NgaySinh'     => $_POST['NgaySinh'] ?? null,
-                'GioiTinh'     => $_POST['GioiTinh'] ?? 'D',
+                'GioiTinh'     => $_POST['GioiTinh'] ?? 'Nam',
                 'DiaChi'       => trim($_POST['DiaChi'] ?? ''),
-                'GhiChu'       => trim($_POST['GhiChu'] ?? ''),
-                'MaNVPhuTrach' => $_POST['MaNVPhuTrach'] ?? null,
-                'ChuongNhap'   => $_POST['ChuongNhap'] ?? 'Thường',
+                'MaNVPhuTrach' => $_POST['MaNVPhuTrach'] ?: null,
             ];
 
-            // === VALIDATION ===
-            if (empty($data['TenKH'])) {
-                $errors[] = 'Vui lòng nhập tên khách hàng';
-            } elseif (strlen($data['TenKH']) < 2) {
-                $errors[] = 'Tên khách hàng phải ít nhất 2 ký tự';
-            }
+            // Validation cơ bản
+            if (empty($data['TenKH'])) $errors[] = 'Vui lòng nhập tên khách hàng';
+            if (empty($data['SDT']))   $errors[] = 'Vui lòng nhập số điện thoại';
 
-            if (empty($data['SDT'])) {
-                $errors[] = 'Vui lòng nhập số điện thoại';
-            } else {
-                // Kiểm tra định dạng số di động Việt Nam (10 số, bắt đầu đúng đầu số)
-                if (!preg_match('/^(0)(3[2-9]|5[689]|7[06-9]|8[1-689]|9[0-46-9])[0-9]{7}$/', $data['SDT'])) {
-                    $errors[] = 'Số điện thoại không hợp lệ (phải là số di động Việt Nam 10 chữ số)';
-                }
-            }
-
-            if (!empty($data['Email']) && !filter_var($data['Email'], FILTER_VALIDATE_EMAIL)) {
-                $errors[] = 'Định dạng email không hợp lệ';
-            }
-
-            if (!empty($data['NgaySinh'])) {
-                $date = DateTime::createFromFormat('Y-m-d', $data['NgaySinh']);
-                $now = new DateTime();
-                if (!$date || $date->format('Y-m-d') !== $data['NgaySinh']) {
-                    $errors[] = 'Ngày sinh không đúng định dạng';
-                } elseif ($date > $now) {
-                    $errors[] = 'Ngày sinh không được trong tương lai';
-                }
-            }
-
-            // === KIỂM TRA TRÙNG SDT (chỉ khi không có lỗi trước đó) ===
-            if (!$errors && !empty($data['SDT'])) {
+            // Kiểm tra trùng SDT
+            if (!$errors) {
                 $check = $this->pdo->prepare("SELECT MaKH FROM khachhang WHERE SDT = ?");
                 $check->execute([$data['SDT']]);
                 if ($check->fetch()) {
-                    $errors[] = 'Số điện thoại này đã được sử dụng bởi khách hàng khác';
+                    $errors[] = 'Số điện thoại này đã được sử dụng.';
                 }
             }
 
-            // === THỰC HIỆN THÊM MỚI ===
+            // Nếu không có lỗi → sinh MaKH chắc chắn chưa tồn tại (xử lý concurrency)
             if (!$errors) {
-                $ok = $this->model->create($data);
+                $currentNumber = $nextNumber;
+                do {
+                    $candidateMaKH = (string)$currentNumber; // chỉ số thuần, ví dụ: '1', '2', '10'
+                    $checkMaKH = $this->pdo->prepare("SELECT 1 FROM khachhang WHERE MaKH = ?");
+                    $checkMaKH->execute([$candidateMaKH]);
+                    if ($checkMaKH->fetch()) {
+                        $currentNumber++; // đã tồn tại → tăng lên
+                    } else {
+                        break;
+                    }
+                } while (true);
 
-                if ($ok === true) {
-                    $_SESSION['success'] = "Thêm khách hàng '{$data['TenKH']}' thành công!";
+                $data['MaKH'] = $candidateMaKH;
+                $autoMaKH = $candidateMaKH; // cập nhật để hiển thị và thông báo
+
+                $result = $this->model->create($data);
+
+                if ($result === true) {
+                    $_SESSION['success'] = "Thêm khách hàng '{$data['TenKH']}' (Mã: {$autoMaKH}) thành công!";
                     header('Location: index.php?url=khachhang');
                     exit;
                 } else {
-                    // Không hiển thị lỗi DB trực tiếp cho người dùng
-                    $errors[] = 'Không thể thêm khách hàng. Vui lòng thử lại sau.';
-                    error_log('Lỗi thêm khách hàng: ' . (is_string($ok) ? $ok : print_r($ok, true)));
+                    $errors[] = $result ?: 'Không thể thêm khách hàng, vui lòng thử lại.';
                 }
             }
         }
 
-        // Render view: truyền errors, data (để repopulate), nhanvien
-        $this->view('add', compact('errors', 'data', 'nhanvien'));
+        // Truyền $autoMaKH sang view (hiển thị số thuần: 1, 2, 3...)
+        $this->view('add', compact('errors', 'data', 'nhanvien', 'autoMaKH'));
     }
-
-    // ==================== SỬA ====================
-    public function edit($id)
+    // ==================== CHỈNH SỬA ====================
+    public function edit($maKH)
     {
-        // Đổi $kh thành $khachhang để khớp với View
-        $khachhang = $this->model->getById($id);
-        if (!$khachhang) {
+        // Lấy thông tin khách hàng hiện tại từ DB
+        $khachHang = $this->model->getByMaKH($maKH);
+
+        if (!$khachHang) {
             $_SESSION['error'] = 'Không tìm thấy khách hàng';
             header('Location: index.php?url=khachhang');
             exit;
         }
 
-        $danhSachNhanVien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien WHERE TrangThai IN ('Chính thức','Thử việc')")->fetchAll();
+        // Load danh sách nhân viên
+        $nhanvien = $this->pdo->query("SELECT MaNV, HoTen FROM nhanvien WHERE TrangThai IN ('Chính thức','Thử việc') ORDER BY HoTen")->fetchAll();
 
-        // Giả lập danh sách chuồng nếu bạn chưa có bảng chuồng riêng
-        $danhSachChuong = ['Chuồng 1', 'Chuồng 2', 'Chuồng 3', 'Chuồng 4'];
         $errors = [];
 
-        if ($_POST) {
+        // Mặc định dùng dữ liệu cũ từ DB để hiển thị trong form
+        $data = [
+            'MaKH'         => $khachHang['MaKH'],
+            'TenKH'        => $khachHang['TenKH'],
+            'SDT'          => $khachHang['SDT'],
+            'Email'        => $khachHang['Email'],
+            'NgaySinh'     => $khachHang['NgaySinh'],
+            'GioiTinh'     => $khachHang['GioiTinh'] ?? 'Nam',
+            'DiaChi'       => $khachHang['DiaChi'],
+            'MaNVPhuTrach' => $khachHang['MaNVPhuTrach'],
+        ];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Lấy dữ liệu từ POST (trim và xử lý null tương tự add)
             $data = [
-                'MaKH'         => $id,
+                'MaKH'         => $maKH,
                 'TenKH'        => trim($_POST['TenKH'] ?? ''),
                 'SDT'          => trim($_POST['SDT'] ?? ''),
-                'Email'        => $_POST['Email'] ?? null,
+                'Email'        => trim($_POST['Email'] ?? '') ?: null,
                 'NgaySinh'     => $_POST['NgaySinh'] ?? null,
-                'GioiTinh'     => $_POST['GioiTinh'] ?? '1',
-                'DiaChi'       => $_POST['DiaChi'] ?? null,
-                'MaNV'         => $_POST['MaNV'] ?? null, // Khớp với tên cột MaNV trong form
-                'ChuongNhap'   => $_POST['ChuongNhap'] ?? null,
+                'GioiTinh'     => $_POST['GioiTinh'] ?? 'Nam',
+                'DiaChi'       => trim($_POST['DiaChi'] ?? '') ?: null,
+                'MaNVPhuTrach' => $_POST['MaNVPhuTrach'] ?: null,
             ];
 
-            if (empty($data['TenKH'])) $errors[] = 'Nhập tên';
-            if (empty($data['SDT']))   $errors[] = 'Nhập SĐT';
+            // Validation cơ bản
+            if (empty($data['TenKH'])) $errors[] = 'Vui lòng nhập tên khách hàng';
+            if (empty($data['SDT']))   $errors[] = 'Vui lòng nhập số điện thoại';
 
+            // Kiểm tra trùng SDT (loại trừ chính khách hàng đang sửa)
             if (!$errors) {
                 $check = $this->pdo->prepare("SELECT MaKH FROM khachhang WHERE SDT = ? AND MaKH != ?");
-                $check->execute([$data['SDT'], $id]);
-                if ($check->fetch()) $errors[] = 'SĐT đã được dùng';
+                $check->execute([$data['SDT'], $maKH]);
+                if ($check->fetch()) {
+                    $errors[] = 'Số điện thoại này đã được sử dụng bởi khách hàng khác.';
+                }
             }
 
+            // Nếu không có lỗi → cập nhật
             if (!$errors) {
-                $ok = $this->model->update($data);
-                if ($ok === true) {
-                    $_SESSION['success'] = "Cập nhật thành công Mã #{$id}";
+                $result = $this->model->update($data);
+
+                if ($result === true) {
+                    $_SESSION['success'] = "Cập nhật thành công khách hàng '{$data['TenKH']}' (Mã: {$maKH})!";
                     header('Location: index.php?url=khachhang');
                     exit;
                 } else {
-                    $errors[] = $ok;
+                    $errors[] = $result ?: 'Không thể cập nhật khách hàng, vui lòng thử lại.';
                 }
             }
+
+            // Nếu có lỗi → $data vẫn là dữ liệu từ POST (đã được gán ở trên), form sẽ hiển thị lại dữ liệu người dùng vừa nhập
         }
 
-        // Truyền đúng tên biến khachhang sang view
-        $this->view('edit', [
-            'khachhang' => $khachhang,
-            'danhSachNhanVien' => $danhSachNhanVien,
-            'danhSachChuong' => $danhSachChuong,
-            'error_message' => implode('<br>', $errors)
-        ]);
+        // Truyền dữ liệu sang view
+        // $data luôn chứa giá trị sẽ hiển thị trong form (dữ liệu cũ nếu chưa submit, hoặc dữ liệu POST nếu có lỗi)
+        $this->view('edit', compact('data', 'nhanvien', 'errors'));
     }
     // ==================== XÓA ====================
-    public function delete($id)
+    public function delete()
     {
-        $kh = $this->model->getById($id);
-        if (!$kh) {
-            $_SESSION['error'] = 'Không tìm thấy';
-            header('Location: index.php?url=khachhang');
-            exit;
-        }
+        // Lấy mã KH từ URL (ví dụ: ?url=khachhang/delete&maKH=1)
+        $maKH = $_GET['maKH'] ?? null;
 
-        if ($_POST && isset($_POST['confirm'])) {
-            if (strtoupper($_POST['confirm']) === 'XÓA') {
-                $this->model->delete($id);
-                $_SESSION['success'] = "Đã xóa {$kh['TenKH']}";
+        if ($maKH) {
+            // Gọi hàm delete từ Model đã sửa ở trên
+            $result = $this->model->delete($maKH);
+
+            if ($result === true) {
+                $_SESSION['success'] = "Đã xóa sạch dữ liệu khách hàng {$maKH}!";
             } else {
-                $_SESSION['error'] = 'Nhập sai xác nhận';
+                $_SESSION['error'] = "Không thể xóa khách hàng này.";
             }
+        }
+
+        // Sau khi xóa xong PHẢI có dòng này để không bị trắng trang
+        header('Location: index.php?url=khachhang');
+        exit;
+    }
+    // ==================== PHẢ HỆ / LỊCH SỬ MUA BÁN ====================
+    public function phahe($maKH)
+    {
+        $khach = $this->model->getByMaKH($maKH);
+        if (!$khach) {
+            $_SESSION['error'] = 'Không tìm thấy khách hàng';
             header('Location: index.php?url=khachhang');
             exit;
         }
 
-        $this->view('delete', compact('kh'));
+        $dsHeo = $this->model->getHeoDaXuat($maKH);
+        $lichPhoi = $this->model->getLichPhoiGiong($maKH);
+
+        $this->view('phahe', [
+            'khach'    => $khach,
+            'dsHeo'    => $dsHeo,
+            'lichPhoi' => $lichPhoi
+        ]);
     }
 
-
-    // ==================== XEM CHI TIẾT KHÁCH HÀNG ====================
-    public function xemchitiet($id = null)
+    // ==================== XEM CHI TIẾT ====================
+    public function xemchitiet($maKH = null)
     {
-        // Hỗ trợ cả ?id=123 và /xemchitiet/123 hoặc ?action=xemchitiet&id=123
-        $id = (int)($id ?? $_GET['id'] ?? 0);
+        $maKH = $maKH ?? $_GET['maKH'] ?? $_GET['id'] ?? '';
 
-        if ($id <= 0) {
+        if (empty($maKH)) {
             $_SESSION['error'] = 'Mã khách hàng không hợp lệ!';
             header('Location: index.php?url=khachhang');
             exit;
         }
 
-        // Lấy thông tin chi tiết từ Model
-        $khachhang = $this->model->getXemChiTietById($id);
+        // Sử dụng hàm getXemChiTietById (đã bao gồm stats) từ Model
+        $khachhang = $this->model->getXemChiTietById($maKH);
 
         if (!$khachhang) {
-            $_SESSION['error'] = 'Không tìm thấy khách hàng này!';
+            $_SESSION['error'] = 'Không tìm thấy dữ liệu khách hàng!';
             header('Location: index.php?url=khachhang');
             exit;
         }
 
-        // Lấy danh sách nhân viên (nếu cần hiển thị tên phụ trách)
-        $danhSachNhanVien = $this->pdo->query("
-            SELECT MaNV, HoTen 
-            FROM nhanvien 
-            WHERE TrangThai IN ('Chính thức','Thử việc')
-            ORDER BY HoTen
-        ")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Render view chi tiết
         $this->view('xemchitiet', [
-            'khachhang'        => $khachhang,
-            'danhSachNhanVien' => $danhSachNhanVien,
-            'thong_ke'         => $khachhang['thong_ke'] ?? []
+            'khachhang' => $khachhang,
+            'thong_ke'  => $khachhang['thong_ke']
         ]);
     }
 }

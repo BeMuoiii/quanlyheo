@@ -56,6 +56,7 @@
                 <table class="w-full">
                     <thead class="bg-emerald-600 text-white text-sm">
                         <tr class="uppercase tracking-wider">
+                            <th class="px-4 py-4 text-center font-bold">Mã Phiếu</th> <!-- CỘT MÃ PHIẾU -->
                             <th class="px-4 py-4 text-center font-bold">STT</th>
                             <th class="px-4 py-4 text-left font-bold">Ngày Xuất</th>
                             <th class="px-4 py-4 text-left font-bold">Mã Heo</th>
@@ -70,12 +71,17 @@
                     <tbody class="divide-y divide-gray-100">
                         <?php if (empty($xuats)): ?>
                             <tr>
-                                <td colspan="9" class="text-center py-10 text-gray-500">Chưa có dữ liệu</td>
+                                <td colspan="10" class="text-center py-10 text-gray-500">Chưa có dữ liệu</td>
                             </tr>
                         <?php else: ?>
                             <?php $stt = ($page - 1) * $limit + 1; ?>
                             <?php foreach ($xuats as $x): ?>
                                 <tr class="hover:bg-emerald-50 transition duration-150">
+                                    <!-- MÃ PHIẾU CHỈ SỐ THUẦN (1, 2, 3...) - KHÔNG PAD 001 -->
+                                    <td class="px-4 py-4 text-center font-bold text-emerald-700 text-2xl">
+                                        <?= htmlspecialchars($x['MaXuat']) ?> <!-- Hiển thị số thực từ DB -->
+                                    </td>
+
                                     <td class="px-4 py-4 text-center font-semibold text-gray-600"><?= $stt++ ?></td>
                                     <td class="px-4 py-4">
                                         <div class="font-bold text-emerald-700"><?= date('d/m/y', strtotime($x['NgayXuat'])) ?></div>
@@ -83,7 +89,7 @@
                                     </td>
                                     <td class="px-4 py-4">
                                         <div class="font-bold text-emerald-700 italic">#<?= htmlspecialchars($x['MaHeo']) ?></div>
-                                        <div class="text-[11px] text-gray-500"><?= $x['TenHeoHienThi'] ?></div>
+                                        <div class="text-[11px] text-gray-500"><?= $x['TenHeoHienThi'] ?? '' ?></div>
                                     </td>
                                     <td class="px-4 py-4 text-center font-bold text-orange-600"><?= number_format($x['CanNangXuat'], 1) ?> kg</td>
                                     <td class="px-4 py-4 text-center font-bold text-blue-600"><?= $x['SoLuong'] ?></td>

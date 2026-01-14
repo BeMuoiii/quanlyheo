@@ -1,47 +1,78 @@
-<?php $title = "Xóa nhân viên vĩnh viễn"; ?>
+<?php $title = "Xóa khách hàng vĩnh viễn"; ?>
+
+<?php
+// === XỬ LÝ XÁC NHẬN XÓA - PHẢI ĐẶT TRƯỚC MỌI THỨ ===
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
+    $maKH = $_GET['maKH'] ?? '';
+
+    if (empty($maKH)) {
+        $_SESSION['error'] = "Không xác định được mã khách hàng để xóa.";
+    } else {
+        $result = $khachHangModel->delete($maKH);
+
+        if ($result === true) {
+            $_SESSION['success'] = "Xóa khách hàng <strong>$maKH</strong> thành công!";
+        } else {
+            $_SESSION['error'] = "Không thể xóa khách hàng <strong>$maKH</strong>!<br>$result";
+        }
+    }
+
+    header('Location: index.php?url=khachhang');
+    exit;
+}
+?>
+
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 <?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
 <div class="ml-64 p-8 min-h-screen bg-gray-50">
     <div class="max-w-3xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-8">Xóa nhân viên vĩnh viễn</h1>
-
-        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
-            <div class="bg-gradient-to-r from-red-700 to-rose-800 text-white p-8 text-center">
-                <i class="fa-solid fa-skull-crossbones text-6xl mb-4 block"></i>
-                <h2 class="text-2xl font-bold">CẢNH BÁO: XÓA VĨNH VIỄN!</h2>
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <div class="text-center mb-8">
+                <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-6"></i>
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">Bạn có chắc chắn muốn xóa nhân viên này?</h1>
+                <p class="text-lg text-gray-600">Dữ liệu liên quan sẽ bị xóa và <strong class="text-red-600">không thể hoàn tác</strong>!</p>
             </div>
 
-            <div class="p-8 bg-red-50 border-b-4 border-red-400">
-                <div class="flex flex-col sm:flex-row items-center gap-8">
-                    <img src="<?= base_url() . htmlspecialchars($nv['Anh'] ?: '/assets/img/avatar-default.png') ?>"
-                         class="w-40 h-40 rounded-full object-cover border-8 border-white shadow-2xl ring-4 ring-red-500">
-                    <div class="text-center sm:text-left">
-                        <h3 class="text-4xl font-bold text-red-700 mb-4"><?= htmlspecialchars($nv['HoTen']) ?></h3>
-                        <p class="text-xl"><strong>#<?= str_pad($nv['MaNV'], 4, '0', STR_PAD_LEFT) ?></strong></p>
-                        <p class="text-lg text-gray-700">Chức vụ: <?= htmlspecialchars($nv['ViTri'] ?? '—') ?></p>
-                        <p class="text-lg text-gray-700">Bộ phận: <?= htmlspecialchars($nv['TenBoPhan'] ?? '—') ?></p>
+            <?php if ($nhanVien): ?>
+                <div class="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-lg">
+                        <div>
+                            <span class="font-semibold text-gray-700">Mã Nhân Viên:</span>
+                            <span class="ml-3 text-xl font-bold text-emerald-700"><?= htmlspecialchars($nhanVien['MaNV']) ?></span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">Họ và Tên:</span>
+                            <span class="ml-3"><?= htmlspecialchars($nhanVien['HoTen'] ?? 'Chưa rõ') ?></span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">Số Điện Thoại:</span>
+                            <span class="ml-3"><?= htmlspecialchars($nhanVien['SoDienThoai'] ?? 'Chưa có') ?></span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">Chức Vụ:</span>
+                            <span class="ml-3 text-blue-600 font-bold"><?= htmlspecialchars($nhanVien['ChucVu'] ?? 'Nhân viên') ?></span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <form action="" method="post" class="p-8">
-                <div class="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-6 mb-8">
-                    <p class="text-yellow-800 font-bold text-lg mb-4">
-                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>
-                        Gõ chính xác: <span class="text-red-600 font-mono">XÓA VĨNH VIỄN</span>
-                    </p>
-                    <input type="text" name="confirm_delete" placeholder="Nhập XÓA VĨNH VIỄN để xác nhận" required
-                           class="w-full px-4 py-3 border-2 border-yellow-500 rounded-lg text-center text-lg font-bold focus:ring-4 focus:ring-red-300">
-                </div>
+                <form action="" method="post" class="text-center">
+                    <div class="flex justify-center gap-6">
+                        <a href="index.php?url=nhanvien" class="px-8 py-3 bg-gray-500 text-white rounded-xl">Hủy bỏ</a>
 
-                <div class="flex gap-4 justify-center">
-                    <button type="submit" name="delete_confirm" class="bg-red-600 hover:bg-red-800 text-white px-12 py-5 rounded-xl font-bold text-xl flex items-center gap-3 shadow-2xl">
-                        <i class="fa-solid fa-trash"></i> XÓA VĨNH VIỄN
-                    </button>
-                    <a href="index.php?url=nhanvien" class="bg-gray-600 hover:bg-gray-700 text-white px-10 py-5 rounded-xl font-bold text-lg">Hủy bỏ</a>
+                        <button type="submit" name="confirm_delete" value="1" class="px-8 py-3 bg-red-600 text-white rounded-xl">
+                            Xóa vĩnh viễn nhân viên này
+                        </button>
+                    </div>
+                </form>
+            <?php else: ?>
+                <div class="text-center py-12">
+                    <p class="text-xl text-red-600 font-medium">Không tìm thấy nhân viên để xóa!</p>
+                    <a href="index.php?url=nhanvien" class="mt-6 inline-block px-8 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition">
+                        Quay lại danh sách
+                    </a>
                 </div>
-            </form>
+            <?php endif; ?>
         </div>
     </div>
 </div>

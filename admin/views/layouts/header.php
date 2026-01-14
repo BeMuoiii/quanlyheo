@@ -18,7 +18,7 @@ if (empty($_SESSION['csrf_token'])) {
     <header class="bg-white shadow-lg fixed top-0 left-0 right-0 z-50 h-16">
         <div class="px-6 flex items-center justify-between h-full">
             <div class="flex items-center">
-                <h1 class="text-2xl font-bold text-emerald-700">Heo Rừng Lái</h1>
+                <h1 class="text-2xl font-bold text-emerald-700">Heo Rừng Lai</h1>
                 <p class="ml-3 text-gray-600 text-sm">Quản Lý Trang Trại</p>
             </div>
             <div class="flex items-center gap-4">

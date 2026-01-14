@@ -147,12 +147,12 @@ $tyLe = $tyLe ?? 0;
                             </td>
 
                             <td class="px-4 py-3 text-center text-xs font-bold text-blue-700 bg-blue-50/30">
-    <?php if (!empty($r['NgayDe'])): ?>
-        <?= date('d/m/Y', strtotime($r['NgayDe'])) ?>
-    <?php else: ?>
-        <span class="text-gray-300 italic">Chưa đẻ</span>
-    <?php endif; ?>
-</td>
+                                <?php if (!empty($r['NgayDe'])): ?>
+                                    <?= date('d/m/Y', strtotime($r['NgayDe'])) ?>
+                                <?php else: ?>
+                                    <span class="text-gray-300 italic">Chưa đẻ</span>
+                                <?php endif; ?>
+                            </td>
 
                             <td class="px-4 py-3 text-center font-bold text-lg <?= $r['SoConSong'] !== null ? 'text-emerald-700' : 'text-gray-300' ?>">
                                 <?= $r['SoConSong'] !== null ? $r['SoConSong'] : '—' ?>

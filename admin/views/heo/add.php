@@ -16,14 +16,14 @@
         <form action="" method="post" class="bg-white rounded-2xl shadow-xl p-8">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-               <div class="mb-4">
-    <label class="block text-gray-700 font-medium mb-2">Mã Heo (Hệ thống cấp)</label>
-    <input type="text" name="MaHeo" 
-           value="<?= $autoMaHeo ?>" 
-           readonly 
-           class="w-full px-4 py-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed outline-none font-bold"
-           title="Mã này được hệ thống tự động đánh số">
-</div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">Mã Heo (Hệ thống cấp)</label>
+                    <input type="text" name="MaHeo"
+                        value="<?= $autoMaHeo ?>"
+                        readonly
+                        class="w-full px-4 py-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed outline-none font-bold"
+                        title="Mã này được hệ thống tự động đánh số">
+                </div>
 
                 <div>
                     <label class="block text-gray-700 font-medium mb-2">Giống Heo</label>

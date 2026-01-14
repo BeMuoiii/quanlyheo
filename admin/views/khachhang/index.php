@@ -78,8 +78,8 @@
                             <th class="px-6 py-4 text-center">Địa chỉ</th>
                             <th class="px-6 py-4 text-center text-yellow-300 font-bold">ĐÃ MUA (CON)</th>
                             <th class="px-6 py-4 text-center">Chi tiết</th>
-                            <th class="px-6 py-4 text-center text-blue-300 font-bold uppercase">Phối giống</th>
-                            
+                            <th class="px-6 py-4 text-center text-blue-300 font-bold uppercase">Phả Hệ</th>
+
                             <th class="px-6 py-4 text-center">Thao tác</th>
                         </tr>
                     </thead>
@@ -96,9 +96,10 @@
 
                             // 2. Lấy tổng số lượt phối giống từ bảng sinhsan (Dùng bảng có sẵn của bạn)
                             // Mình giả định trong bảng sinhsan bạn có cột MaKH để đánh dấu heo của khách
-                            $stmtPhoi = $pdo->prepare("SELECT COUNT(*) FROM sinhsan WHERE MaKH = ?");
-                            $stmtPhoi->execute([$kh['MaKH']]);
-                            $tongPhoiGiong = (int)$stmtPhoi->fetchColumn();
+
+                            // $stmtPhoi = $pdo->prepare("SELECT COUNT(*) FROM sinhsan WHERE MaKH = ?");
+                            // $stmtPhoi->execute([$kh['MaKH']]);
+                            // $tongPhoiGiong = (int)$stmtPhoi->fetchColumn();
                         ?>
                             <tr class="hover:bg-emerald-50 transition">
                                 <td class="px-6 py-4 text-center font-bold text-gray-400"><?= $stt++ ?></td>
@@ -134,18 +135,18 @@
                                     </a>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <a href="index.php?url=sinhsan&kh_id=<?= $kh['MaKH'] ?>"
-                                        class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-md hover:shadow-lg">
-                                        <i class="fa-solid fa-venus-mars"></i>
-                                        Phối giống (<?= $tongPhoiGiong ?>)
+                                    <a href="index.php?url=khachhang/phahe&maKH=<?= htmlspecialchars($kh['MaKH']) ?>"
+                                        class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded">
+                                        <i class="fas fa-solid fa-sitemap"></i>
+                                        Phả hệ (<?= $kh['tong_da_mua'] ?? 0 ?> đơn)
                                     </a>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center items-center gap-4">
-                                        <a href="index.php?url=khachhang/edit&id=<?= $kh['MaKH'] ?>"
+                                        <a href="index.php?url=khachhang/edit&maKH=<?= htmlspecialchars($kh['MaKH']) ?>"
                                             class="text-indigo-600 hover:text-indigo-900 font-bold transition">Sửa</a>
-                                        <a href="index.php?url=khachhang/delete&id=<?= $kh['MaKH'] ?>"
-                                            onclick="return confirm('Xóa khách hàng này?')"
+                                        <a href="index.php?url=khachhang/delete&maKH=<?= htmlspecialchars($kh['MaKH']) ?>"
+                                            onclick="return confirm('Bạn có chắc muốn xóa khách hàng này?')"
                                             class="text-red-600 hover:text-red-900 font-bold transition">Xóa</a>
                                     </div>
                                 </td>
@@ -300,6 +301,5 @@ const text = row.textContent.toLowerCase();
 row.style.display = text.includes(filter) ? '' : 'none';
 });
 }); -->
-</script>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

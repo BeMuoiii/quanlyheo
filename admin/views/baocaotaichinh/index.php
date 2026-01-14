@@ -34,12 +34,12 @@
             </a>
             <div class="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-2xl shadow-2xl transition duration-300 hover:scale-[1.02]">
                 <p class="text-red-100">Tổng chi phí</p>
-                <p class="text-4xl font-bold mt-2">11.280 triệu</p>
+                <p class="text-4xl font-bold mt-2">0 triệu</p>
                 <p class="text-red-100 text-sm mt-2">+15% so với 2024</p>
             </div>
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-2xl transition duration-300 hover:scale-[1.02]">
                 <p class="text-blue-100">Lợi nhuận gộp</p>
-                <p class="text-4xl font-bold mt-2">7.140 triệu</p>
+                <p class="text-4xl font-bold mt-2">0 triệu</p>
                 <div class="mt-2 flex justify-between items-end">
                     <span class="text-blue-100 text-sm">Tỷ suất gộp:</span>
                     <span class="text-green-200 font-bold text-lg">38.8%</span>
@@ -47,7 +47,7 @@
             </div>
             <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl shadow-2xl transition duration-300 hover:scale-[1.02]">
                 <p class="text-purple-100">Lợi nhuận ròng</p>
-                <p class="text-4xl font-bold mt-2">4.280 triệu</p>
+                <p class="text-4xl font-bold mt-2">0 triệu</p>
                 <div class="mt-2 flex justify-between items-end">
                     <span class="text-purple-100 text-sm">Tỷ suất ròng:</span>
                     <span class="text-green-200 font-bold text-lg">23.2%</span>
@@ -78,7 +78,7 @@
                     </div>
                     <div class="flex justify-between items-center py-5 bg-green-100 rounded-xl px-6 mt-6 shadow-md">
                         <span class="text-xl font-bold text-green-800">TỔNG DOANH THU</span>
-                        <span class="text-3xl font-extrabold text-green-700">18.420 triệu</span>
+                        <span class="text-3xl font-extrabold text-green-700">0</span>
                     </div>
                 </div>
             </div>
@@ -88,19 +88,19 @@
                 <div class="space-y-3">
                     <div class="flex justify-between items-center py-4 px-2 border-b border-red-100 hover:bg-red-50 rounded-lg">
                         <span>Chi phí thức ăn chăn nuôi</span>
-                        <span class="font-bold text-red-600 text-lg">8.500 triệu</span>
+                        <span class="font-bold text-red-600 text-lg">0 triệu</span>
                     </div>
                     <div class="flex justify-between items-center py-4 px-2 border-b border-red-100 hover:bg-red-50 rounded-lg">
                         <span>Chi phí thuốc thú y & vaccine</span>
-                        <span class="font-bold text-red-600 text-lg">950 triệu</span>
+                        <span class="font-bold text-red-600 text-lg">0 triệu</span>
                     </div>
                     <div class="flex justify-between items-center py-4 px-2 border-b border-red-100 hover:bg-red-50 rounded-lg">
                         <span>Chi phí nhân công & điện nước</span>
-                        <span class="font-bold text-red-600 text-lg">1.830 triệu</span>
+                        <span class="font-bold text-red-600 text-lg">0 triệu</span>
                     </div>
                     <div class="flex justify-between items-center py-5 bg-red-100 rounded-xl px-6 mt-6 shadow-md">
                         <span class="text-xl font-bold text-red-800">TỔNG CHI PHÍ</span>
-                        <span class="text-3xl font-extrabold text-red-700">11.280 triệu</span>
+                        <span class="text-3xl font-extrabold text-red-700">0 triệu</span>
                     </div>
                 </div>
             </div>
@@ -155,19 +155,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div class="bg-white rounded-3xl shadow-2xl p-8 text-center border-b-4 border-red-500 transition duration-300 hover:scale-[1.02]">
                 <p class="text-gray-600 text-lg font-semibold">Giá vốn trung bình/con</p>
-                <p class="text-5xl font-extrabold text-red-600 mt-3">6.820.000 đ</p>
+                <p class="text-5xl font-extrabold text-red-600 mt-3">0 đ</p>
                 <p class="text-red-400 text-sm mt-3">Chi phí sản xuất</p>
             </div>
 
             <div class="bg-white rounded-3xl shadow-2xl p-8 text-center border-b-4 border-green-500 transition duration-300 hover:scale-[1.02]">
                 <p class="text-gray-600 text-lg font-semibold">Giá bán trung bình/con</p>
-                <p class="text-5xl font-extrabold text-green-600 mt-3">11.120.000 đ</p>
+                <p class="text-5xl font-extrabold text-green-600 mt-3">0 đ</p>
                 <p class="text-green-400 text-sm mt-3">Doanh thu đạt được</p>
             </div>
 
             <div class="bg-white rounded-3xl shadow-2xl p-8 text-center border-b-4 border-blue-500 transition duration-300 hover:scale-[1.02]">
                 <p class="text-gray-600 text-lg font-semibold">Lãi ròng trung bình/con</p>
-                <p class="text-5xl font-extrabold text-blue-600 mt-3">4.280.000 đ</p>
+                <p class="text-5xl font-extrabold text-blue-600 mt-3">0 đ</p>
                 <p class="text-green-600 font-bold text-xl mt-3">↑ 18% so với 2024</p>
             </div>
         </div>
@@ -190,9 +190,9 @@
                 <tbody class="divide-y">
                     <tr class="bg-green-50">
                         <td class="py-4 font-medium">Tháng 12/2025 (đang chạy)</td>
-                        <td class="py-4 font-bold text-green-600">1.840 triệu</td>
-                        <td class="py-4 font-bold text-red-600">1.080 triệu</td>
-                        <td class="py-4 font-bold text-blue-600">760 triệu</td>
+                        <td class="py-4 font-bold text-green-600">0 triệu</td>
+                        <td class="py-4 font-bold text-red-600">0 triệu</td>
+                        <td class="py-4 font-bold text-blue-600">0 triệu</td>
                         <td class="py-4 font-bold text-purple-600">41.3%</td>
                     </tr>
                     <!-- Có thể thêm các tháng khác ở đây -->
