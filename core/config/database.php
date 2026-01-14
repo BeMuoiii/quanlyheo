@@ -14,16 +14,16 @@ if (!function_exists('base_url')) {
 // core/config/Database.php
 class Database
 {
-    private $host = 'localhost';
-    private $db_name = 'heorunglai1'; // Thay tên này bằng tên DB bạn tạo trong phpMyAdmin
-    private $username = 'root';
-    private $password = ''; // Thường để trống trên Windows, hoặc 'root' trên Mac
-    public $conn;
-    // private $host = 'sql302.infinityfree.com';
-    // private $db_name = 'if0_40752166_heorunglai1';
-    // private $username = 'if0_40752166';
-    // private $password = '5NOR0wgsDH';
+    // private $host = 'localhost';
+    // private $db_name = 'heorunglai1';
+    // private $username = 'root';
+    // private $password = '';
     // public $conn;
+    private $host = 'sql302.infinityfree.com';
+    private $db_name = 'if0_40752166_heorunglai1';
+    private $username = 'if0_40752166';
+    private $password = '5NOR0wgsDH';
+    public $conn;
 
     public function getConnection()
     {

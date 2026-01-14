@@ -26,6 +26,7 @@ $title = $isEdit ? "Sửa thông tin nhân viên" : "Tuyển dụng nhân viên 
                 <!-- Mã NV tự động (read-only, hiển thị luôn) -->
                 <div>
                    
+
                     <?php if (!$isEdit): ?>
                         <div class="mb-6">
                             <label class="block text-gray-700 font-medium mb-2">Mã NV (hệ thống tự cấp)</label>
