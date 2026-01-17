@@ -29,28 +29,43 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
             <a href="../.../../xuatchuong/index.php" class="block bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-6 rounded-2xl shadow-2xl transition duration-300 hover:scale-[1.02] hover:shadow-emerald-400/50 cursor-pointer">
                 <p class="text-emerald-100">Doanh thu thuần</p>
-                <p class="text-4xl font-bold mt-2"><?= number_format($tongDoanhThu ?? 0, 4, '.', ',') ?> triệu</p>
+                <p class="text-4xl font-bold mt-2">
+                    <span id="display-tongDoanhThu" data-field="tongDoanhThu">0</span> triệu
+                </p>
                 <p class="text-emerald-100 text-sm mt-2">+28% so với 2024</p>
             </a>
+
             <div class="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-2xl shadow-2xl transition duration-300 hover:scale-[1.02]">
                 <p class="text-red-100">Tổng chi phí</p>
-                <p class="text-4xl font-bold mt-2">0 triệu</p>
+                <p class="text-4xl font-bold mt-2">
+                    <span data-field="tongChiPhi">0</span> triệu
+                </p>
                 <p class="text-red-100 text-sm mt-2">+15% so với 2024</p>
             </div>
+
             <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-2xl transition duration-300 hover:scale-[1.02]">
                 <p class="text-blue-100">Lợi nhuận gộp</p>
-                <p class="text-4xl font-bold mt-2">0 triệu</p>
+                <p class="text-4xl font-bold mt-2">
+                    <span data-field="loiNhuanGop">0</span> triệu
+                </p>
                 <div class="mt-2 flex justify-between items-end">
                     <span class="text-blue-100 text-sm">Tỷ suất gộp:</span>
-                    <span class="text-green-200 font-bold text-lg">38.8%</span>
+                    <span class="text-green-200 font-bold text-lg">
+                        <span data-field="tySuatGop">0</span>%
+                    </span>
                 </div>
             </div>
+
             <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-2xl shadow-2xl transition duration-300 hover:scale-[1.02]">
                 <p class="text-purple-100">Lợi nhuận ròng</p>
-                <p class="text-4xl font-bold mt-2">0 triệu</p>
+                <p class="text-4xl font-bold mt-2">
+                    <span data-field="loiNhuanRong">0</span> triệu
+                </p>
                 <div class="mt-2 flex justify-between items-end">
                     <span class="text-purple-100 text-sm">Tỷ suất ròng:</span>
-                    <span class="text-green-200 font-bold text-lg">23.2%</span>
+                    <span class="text-green-200 font-bold text-lg">
+                        <span data-field="tySuatRong">0</span>%
+                    </span>
                 </div>
             </div>
         </div>
@@ -66,15 +81,15 @@
                 <div class="space-y-3">
                     <div class="flex justify-between items-center py-4 px-2 border-b border-green-100 hover:bg-green-50 rounded-lg">
                         <span>Bán heo thương phẩm</span>
-                        <span class="font-bold text-green-600 text-lg">17.920 triệu</span>
+                        <span class="font-bold text-green-600 text-lg">0 triệu</span>
                     </div>
                     <div class="flex justify-between items-center py-4 px-2 border-b border-green-100 hover:bg-green-50 rounded-lg">
                         <span>Bán heo giống</span>
-                        <span class="font-bold text-green-600 text-lg">380 triệu</span>
+                        <span class="font-bold text-green-600 text-lg">0 triệu</span>
                     </div>
                     <div class="flex justify-between items-center py-4 px-2 border-b border-green-100 hover:bg-green-50 rounded-lg">
                         <span>Khác (phế phẩm, phân...)</span>
-                        <span class="font-bold text-green-600 text-lg">120 triệu</span>
+                        <span class="font-bold text-green-600 text-lg">0 triệu</span>
                     </div>
                     <div class="flex justify-between items-center py-5 bg-green-100 rounded-xl px-6 mt-6 shadow-md">
                         <span class="text-xl font-bold text-green-800">TỔNG DOANH THU</span>
@@ -207,58 +222,98 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Dữ liệu từ PHP
-    const doanhThuThang = <?= json_encode(array_values($doanhThuThang ?? array_fill(0, 12, 0))) ?>;
-
-    const ctx = document.getElementById('chartDoanhThu').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
-            datasets: [{
-                    label: 'Doanh thu',
-                    data: doanhThuThang.map(x => x / 1000000),
-                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                    borderColor: 'rgb(34, 197, 94)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Chi phí (ước tính)',
-                    data: [850, 920, 1100, 1050, 1200, 1300, 1250, 1400, 1350, 1500, 1450, 1600],
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    borderColor: 'rgb(239, 68, 68)',
-                    borderWidth: 1
-                },
-                {
-                    type: 'line',
-                    label: 'Lợi nhuận',
-                    data: doanhThuThang.map((dt, i) => (dt - [850, 920, 1100, 1050, 1200, 1300, 1250, 1400, 1350, 1500, 1450, 1600][i]) / 1000000),
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    tension: 0.4,
-                    fill: true
+    // 1. KHO DỮ LIỆU TẬP TRUNG (STATE)
+    const state = new Proxy({
+        tongDoanhThu: 0,
+        tongChiPhi: 0,
+        loiNhuanGop: 0,
+        tySuatGop: 0,
+        loiNhuanRong: 0,
+        tySuatRong: 0,
+        giaVon: 0,
+        giaBan: 0,
+        laiRongCon: 0
+    }, {
+        set(target, property, value) {
+            target[property] = value;
+            // Tự động tìm tất cả thẻ HTML có data-field tương ứng để đổi số
+            const elements = document.querySelectorAll(`[data-field="${property}"], [id="display-${property}"]`);
+            elements.forEach(el => {
+                if (property.startsWith('tySuat')) {
+                    el.innerText = value.toFixed(1);
+                } else {
+                    el.innerText = new Intl.NumberFormat('vi-VN').format(value);
                 }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            });
+            return true;
         }
     });
 
-    // Xuất Excel đơn giản
-    function xuatExcel() {
-        alert("Chức năng xuất Excel đang phát triển – liên hệ admin để có file mẫu nhé!");
+    // 2. HÀM LẤY DỮ LIỆU THỰC TỪ SERVER (QUAN TRỌNG NHẤT)
+    async function capNhatBaoCao() {
+        try {
+            // Bạn cần tạo 1 file 'api_bao_cao.php' trả về dữ liệu JSON
+            const response = await fetch('api_get_data.php?nam=' + document.getElementById('namSelect').value);
+            const data = await response.json();
+
+            // Đổ dữ liệu lấy được vào 'state', giao diện sẽ tự nhảy
+            state.tongDoanhThu = data.tongDoanhThu;
+            state.tongChiPhi = data.tongChiPhi;
+            state.loiNhuanGop = data.tongDoanhThu - data.tongChiPhi;
+            state.tySuatGop = data.tongDoanhThu > 0 ? (state.loiNhuanGop / data.tongDoanhThu) * 100 : 0;
+
+            state.loiNhuanRong = state.loiNhuanGop; // Hoặc logic riêng của bạn
+            state.tySuatRong = state.tySuatGop;
+
+            state.giaVon = data.giaVon;
+            state.giaBan = data.giaBan;
+            state.laiRongCon = data.giaBan - data.giaVon;
+
+            // Cập nhật biểu đồ nếu có dữ liệu tháng
+            if (data.doanhThuThang) updateChart(data.doanhThuThang);
+
+        } catch (error) {
+            console.error("Không lấy được dữ liệu mới:", error);
+        }
     }
+
+    // 3. KHỞI TẠO BIỂU ĐỒ
+    let myChart;
+
+    function initChart() {
+        const ctx = document.getElementById('chartDoanhThu').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                datasets: [{
+                        label: 'Doanh thu',
+                        data: [],
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)'
+                    },
+                    {
+                        label: 'Chi phí',
+                        data: [],
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)'
+                    }
+                ]
+            }
+        });
+    }
+
+    function updateChart(monthlyData) {
+        myChart.data.datasets[0].data = monthlyData.map(x => x / 1000000);
+        myChart.update();
+    }
+
+    // Lắng nghe sự kiện đổi năm
+    document.getElementById('namSelect').addEventListener('change', capNhatBaoCao);
+
+    // Chạy lần đầu khi mở trang
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        capNhatBaoCao();
+    });
 </script>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

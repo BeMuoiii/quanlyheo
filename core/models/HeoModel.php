@@ -143,52 +143,67 @@ class HeoModel
     }
 
 
-    public function create($data)
-    {
-        try {
-            // === TỰ ĐỘNG TẠO CHUỒNG NẾU CHƯA TỒN TẠI ===
-            if (!empty($data['ViTriChuong'])) {
-                $maChuong = strtoupper(trim($data['ViTriChuong']));
+  public function create($data)
+{
+    try {
+        // === 1. Chuẩn hóa và xử lý vị trí chuồng (giữ nguyên logic cũ) ===
+        if (!empty($data['ViTriChuong'])) {
+            $maChuong = strtoupper(trim($data['ViTriChuong']));
 
-                $check = $this->pdo->prepare("SELECT MaChuong FROM chuongheo WHERE MaChuong = ?");
-                $check->execute([$maChuong]);
+            $check = $this->pdo->prepare("SELECT MaChuong FROM chuongheo WHERE MaChuong = ?");
+            $check->execute([$maChuong]);
 
-                if ($check->rowCount() == 0) {
-                    $this->pdo->prepare("INSERT INTO chuongheo (MaChuong, TenChuong, SucChua) VALUES (?, ?, 20)")
-                        ->execute([$maChuong, 'Chuồng ' . $maChuong]);
-                }
-                $data['ViTriChuong'] = $maChuong;
-            } else {
-                $data['ViTriChuong'] = null; // Cho phép để trống
+            if ($check->rowCount() == 0) {
+                $this->pdo->prepare("INSERT INTO chuongheo (MaChuong, TenChuong, SucChua) 
+                                     VALUES (?, ?, 20)")
+                    ->execute([$maChuong, 'Chuồng ' . $maChuong]);
             }
+            $data['ViTriChuong'] = $maChuong;
+        } else {
+            $data['ViTriChuong'] = null;
+        }
 
-            // === INSERT HEO – ĐÃ SỬA LỖI CHÍNH TẢ ===
-            $sql = "INSERT INTO heo (
+        // === 2. KIỂM TRA MÃ HEO ĐÃ TỒN TẠI CHƯA ===
+        $checkHeo = $this->pdo->prepare("SELECT MaHeo FROM heo WHERE MaHeo = ?");
+        $checkHeo->execute([$data['MaHeo']]);
+
+        if ($checkHeo->rowCount() > 0) {
+            return "Lỗi: Mã heo '" . $data['MaHeo'] . "' đã tồn tại trong hệ thống.";
+        }
+
+        // === 3. INSERT heo ===
+        $sql = "INSERT INTO heo (
                     MaHeo, GiongHeo, GioiTinh, NgaySinh, GiaVon, CanNangHienTai,
                     ViTriChuong, TrangThaiHeo, NguonGoc, GhiChu, MaBo, MaMe, NgayTao
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
-            $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([
-                $data['MaHeo'],
-                $data['GiongHeo'],
-                $data['GioiTinh'],
-                $data['NgaySinh'],
-                $data['GiaVon'],
-                $data['CanNangHienTai'] ?? null,
-                $data['ViTriChuong'],
-                $data['TrangThaiHeo'] ?? 'Bình thường',
-                $data['NguonGoc'] ?? null,
-                $data['GhiChu'] ?? null,
-                $data['MaBo'] ?? null,
-                $data['MaMe'] ?? null
-            ]);
+        $stmt = $this->pdo->prepare($sql);
+        $result = $stmt->execute([
+            $data['MaHeo'],                    // tự nhập, không tự sinh
+            $data['GiongHeo'] ?? null,
+            $data['GioiTinh'] ?? null,
+            $data['NgaySinh'] ?? null,
+            $data['GiaVon'] ?? null,
+            $data['CanNangHienTai'] ?? null,
+            $data['ViTriChuong'],
+            $data['TrangThaiHeo'] ?? 'Bình thường',
+            $data['NguonGoc'] ?? null,
+            $data['GhiChu'] ?? null,
+            $data['MaBo'] ?? null,
+            $data['MaMe'] ?? null
+        ]);
 
-            return $result;
-        } catch (PDOException $e) {
-            return "Lỗi thêm heo: " . $e->getMessage();
+        if ($result) {
+            return true;           // hoặc return $this->pdo->lastInsertId() nếu cần
+        } else {
+            return "Thêm heo thất bại (không rõ nguyên nhân)";
         }
+
+    } catch (PDOException $e) {
+        // Có thể log lỗi chi tiết ở đây nếu cần
+        return "Lỗi thêm heo: " . $e->getMessage();
     }
+}
 
     public function update($data)
     {

@@ -17,12 +17,22 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Mã Heo (Hệ thống cấp)</label>
-                    <input type="text" name="MaHeo"
-                        value="<?= $autoMaHeo ?>"
-                        readonly
-                        class="w-full px-4 py-3 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed outline-none font-bold"
-                        title="Mã này được hệ thống tự động đánh số">
+                    <label for="MaHeo" class="block text-gray-700 font-medium mb-2">
+                        Mã Heo <span class="text-red-600 font-bold">*</span>
+                    </label>
+                    <input type="text"
+                        name="MaHeo"
+                        id="MaHeo"
+                        value="<?= htmlspecialchars($maHeo_input ?? '') ?>"
+                        required
+                        placeholder="Ví dụ: HD-2025-001 hoặc CAI-045"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                      focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                      outline-none transition duration-200"
+                        title="Nhập mã heo duy nhất do bạn tự đặt">
+                    <p class="mt-1 text-sm text-gray-500">
+                        Mã heo phải duy nhất, chỉ dùng chữ cái, số, dấu gạch ngang hoặc gạch dưới (3-20 ký tự).
+                    </p>
                 </div>
 
                 <div>

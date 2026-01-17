@@ -64,63 +64,63 @@ class HeoController
 }
     /** THÊM HEO MỚI */
     public function add()
-    {
-        $error_message = '';
+{
+    $error_message = '';
+    $maHeo_input = '';          // Giá trị mã heo để hiển thị lại nếu lỗi
 
-        // Bước 1: Tạo mã mặc định ngay khi load trang (mặc định cho Heo Đực 'D')
-        // Nếu bạn muốn mặc định Heo Cái thì đổi thành 'C'
-        $defaultGioiTinh = 'D';
-        $autoMaHeo = $this->model->generateAutoMaHeo($defaultGioiTinh);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $gioiTinh = trim($_POST['GioiTinh'] ?? 'D');
+        $maHeo    = trim($_POST['MaHeo'] ?? '');
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $gioiTinh = $_POST['GioiTinh'] ?? 'D';
-            $maHeo = trim($_POST['MaHeo'] ?? '');
-
-            // Nếu lúc POST người dùng xóa trống mã, hệ thống lại tự tạo lần nữa cho an toàn
-            if (empty($maHeo)) {
-                $maHeo = $this->model->generateAutoMaHeo($gioiTinh);
-            }
-
+        // Bắt buộc phải nhập mã heo
+        if (empty($maHeo)) {
+            $error_message = 'Vui lòng nhập Mã heo!';
+        } else {
             $data = [
                 'MaHeo'          => $maHeo,
-                'GiongHeo'       => $_POST['GiongHeo'] ?? 'Heo rừng lai',
+                'GiongHeo'       => trim($_POST['GiongHeo'] ?? 'Heo rừng lai'),
                 'GioiTinh'       => $gioiTinh,
-                'NgaySinh'       => $_POST['NgaySinh'] ?? '',
+                'NgaySinh'       => trim($_POST['NgaySinh'] ?? ''),
                 'GiaVon'         => max(0, floatval($_POST['GiaVon'] ?? 0)),
                 'CanNangHienTai' => max(0.1, floatval($_POST['CanNangHienTai'] ?? 0)),
                 'ViTriChuong'    => trim($_POST['ViTriChuong'] ?? ''),
-                'TrangThaiHeo'   => $_POST['TrangThaiHeo'] ?? 'Bình thường',
+                'TrangThaiHeo'   => trim($_POST['TrangThaiHeo'] ?? 'Bình thường'),
                 'NguonGoc'       => trim($_POST['NguonGoc'] ?? ''),
                 'GhiChu'         => trim($_POST['GhiChu'] ?? ''),
-                'MaBo'           => !empty($_POST['MaBo']) ? $_POST['MaBo'] : null,
-                'MaMe'           => !empty($_POST['MaMe']) ? $_POST['MaMe'] : null,
+                'MaBo'           => !empty($_POST['MaBo']) ? trim($_POST['MaBo']) : null,
+                'MaMe'           => !empty($_POST['MaMe']) ? trim($_POST['MaMe']) : null,
             ];
 
+            // Validate bắt buộc
             if (empty($data['NgaySinh'])) {
                 $error_message = 'Vui lòng chọn Ngày sinh!';
-                // Nếu lỗi, ta giữ lại mã heo người dùng đang nhập hoặc mã tự động cũ
-                $autoMaHeo = $maHeo;
+            } elseif (!preg_match('/^[A-Za-z0-9\-_]{3,20}$/', $maHeo)) {  // Ví dụ regex đơn giản
+                $error_message = 'Mã heo chỉ được chứa chữ cái, số, dấu gạch ngang hoặc gạch dưới (3-20 ký tự)';
             } else {
                 $result = $this->model->create($data);
+
                 if ($result === true) {
-                    $_SESSION['success'] = "Thêm thành công mã: {$data['MaHeo']}";
+                    $_SESSION['success'] = "Thêm thành công heo mã: {$data['MaHeo']}";
                     header('Location: index.php?url=heo');
                     exit;
                 } else {
-                    $error_message = $result;
-                    $autoMaHeo = $maHeo;
+                    $error_message = is_string($result) ? $result : 'Lỗi hệ thống khi thêm heo';
                 }
             }
-        }
 
-        // Bước 2: Truyền biến $autoMaHeo sang View để hiện lên ô nhập liệu
-        $this->view('add', [
-            'error_message' => $error_message,
-            'autoMaHeo'     => $autoMaHeo,
-            'heoDuc'        => $this->model->getByGioiTinh('D'),
-            'heoCai'        => $this->model->getByGioiTinh('C')
-        ]);
+            // Giữ lại giá trị người dùng đã nhập để hiển thị lại form
+            $maHeo_input = $maHeo;
+        }
     }
+
+    // Nếu không phải POST hoặc có lỗi → truyền giá trị mặc định hoặc đã nhập
+    $this->view('add', [
+        'error_message' => $error_message,
+        'maHeo_input'   => $maHeo_input,           // Đổi tên biến cho rõ ràng
+        'heoDuc'        => $this->model->getByGioiTinh('D'),
+        'heoCai'        => $this->model->getByGioiTinh('C')
+    ]);
+}
 
     /** SỬA HEO */
     public function edit($id)
