@@ -19,8 +19,8 @@ class Database
     // private $username = 'root';
     // private $password = '';
     // public $conn;
-    private $host = 'sql302.infinityfree.com';
-    private $db_name = 'if0_40752166_heorunglai1';
+    private $host     = 'sql302.epizy.com';          // ← THAY ĐÚNG HOSTNAME TỪ PANEL (thường là .epizy.com)
+    private $db_name  = 'if0_40752166_heorunglai1';  // Giữ nếu panel xác nhận đúng
     private $username = 'if0_40752166';
     private $password = '5NOR0wgsDH';
     public $conn;
